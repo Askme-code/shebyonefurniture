@@ -1,4 +1,4 @@
-import type { Product, Category } from './types';
+import type { Product, Category, Order } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => {
@@ -178,7 +178,68 @@ export const products: Product[] = [
     }
 ];
 
+export const orders: Order[] = [
+    {
+      id: 'ORD001',
+      customerName: 'Asha Juma',
+      phone: '0777 123 456',
+      address: 'Michenzani, Zanzibar',
+      items: [
+        { product: products[1], quantity: 1 },
+        { product: products[8], quantity: 2 },
+      ],
+      total: products[1].price * 1 + products[8].price * 2,
+      status: 'Delivered',
+      createdAt: new Date('2024-05-20T10:30:00Z'),
+    },
+    {
+      id: 'ORD002',
+      customerName: 'Fatma Ali',
+      phone: '0655 987 654',
+      address: 'Kijangwani, Zanzibar',
+      items: [{ product: products[3], quantity: 1 }],
+      total: products[3].price * 1,
+      status: 'Processing',
+      createdAt: new Date('2024-05-22T14:00:00Z'),
+    },
+    {
+      id: 'ORD003',
+      customerName: 'John Smith',
+      phone: '0788 555 111',
+      address: 'Nungwi, Zanzibar',
+      items: [{ product: products[6], quantity: 1 }],
+      total: products[6].price * 1,
+      status: 'Pending',
+      createdAt: new Date('2024-05-23T09:15:00Z'),
+    },
+    {
+        id: 'ORD004',
+        customerName: 'Siti Mohamed',
+        phone: '0712 345 678',
+        address: 'Bububu, Zanzibar',
+        items: [
+            { product: products[0], quantity: 1 },
+            { product: products[9], quantity: 1 },
+        ],
+        total: products[0].price + products[9].price,
+        status: 'Delivered',
+        createdAt: new Date('2024-05-18T11:45:00Z'),
+    },
+    {
+        id: 'ORD005',
+        customerName: 'David Ochieng',
+        phone: '0689 112 233',
+        address: 'Paje, Zanzibar',
+        items: [{ product: products[2], quantity: 4 }],
+        total: products[2].price * 4,
+        status: 'Cancelled',
+        createdAt: new Date('2024-05-19T16:20:00Z'),
+    },
+  ];
+
 export const getProducts = () => products;
 export const getProductById = (id: string) => products.find(p => p.id === id);
 export const getCategories = () => categories;
 export const getCategoryById = (id: string) => categories.find(c => c.id === id);
+export const getOrders = () => orders;
+export const getOrderById = (id: string) => orders.find(o => o.id === id);
