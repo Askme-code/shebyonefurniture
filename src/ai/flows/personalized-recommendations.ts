@@ -4,21 +4,10 @@
  * @fileOverview A personalized furniture recommendation AI agent.
  *
  * - getPersonalizedRecommendations - A function that returns personalized furniture recommendations based on user's viewing history and cart items.
- * - PersonalizedRecommendationsInput - The input type for the getPersonalizedRecommendations function.
- * - PersonalizedRecommendationsOutput - The return type for the getPersonalizedRecommendations function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const PersonalizedRecommendationsInputSchema = z.object({
-  viewedProductIds: z.array(z.string()).describe('The IDs of the products the user has recently viewed.'),
-  cartProductIds: z.array(z.string()).describe('The IDs of the products currently in the user\'s cart.'),
-});
-export type PersonalizedRecommendationsInput = z.infer<typeof PersonalizedRecommendationsInputSchema>;
-
-const PersonalizedRecommendationsOutputSchema = z.array(z.string()).describe('An array of product IDs representing personalized furniture recommendations.');
-export type PersonalizedRecommendationsOutput = z.infer<typeof PersonalizedRecommendationsOutputSchema>;
+import { PersonalizedRecommendationsInputSchema, PersonalizedRecommendationsOutputSchema, type PersonalizedRecommendationsInput, type PersonalizedRecommendationsOutput } from '@/ai/schemas/recommendations-schema';
 
 export async function getPersonalizedRecommendations(input: PersonalizedRecommendationsInput): Promise<PersonalizedRecommendationsOutput> {
   return personalizedRecommendationsFlow(input);
