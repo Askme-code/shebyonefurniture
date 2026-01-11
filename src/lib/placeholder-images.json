@@ -1,3 +1,148 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-1",
+      "description": "A beautiful living room with a comfortable sofa and elegant furniture.",
+      "imageUrl": "https://images.unsplash.com/photo-1618220179428-22790b461013?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsaXZpbmclMjByb29tfGVufDB8fHx8MTc2ODA3Nzc5OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "living room"
+    },
+    {
+      "id": "category-beds",
+      "description": "A stylish modern bed.",
+      "imageUrl": "https://images.unsplash.com/photo-1572177215152-32f247303126?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb2Rlcm4lMjBiZWR8ZW58MHx8fHwxNzY4MDY3ODYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern bed"
+    },
+    {
+      "id": "category-sofas",
+      "description": "A comfortable and stylish sofa.",
+      "imageUrl": "https://images.unsplash.com/photo-1765766601447-9e11ad2356da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzdHlsaXNoJTIwc29mYXxlbnwwfHx8fDE3NjgxMTg5ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stylish sofa"
+    },
+    {
+      "id": "category-chairs",
+      "description": "An elegant armchair.",
+      "imageUrl": "https://images.unsplash.com/photo-1714872245785-674ae3038d21?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcm1jaGFpcnxlbnwwfHx8fDE3NjgxMTg5ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "armchair"
+    },
+    {
+      "id": "category-tables",
+      "description": "A wooden dining table.",
+      "imageUrl": "https://images.unsplash.com/photo-1604578762246-41134e37f9cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkaW5pbmclMjB0YWJsZXxlbnwwfHx8fDE3NjgwMTQzOTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dining table"
+    },
+    {
+      "id": "category-office",
+      "description": "A modern office desk and chair setup.",
+      "imageUrl": "https://images.unsplash.com/photo-1513530534585-c7b1394c6d51?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxvZmZpY2UlMjBkZXNrfGVufDB8fHx8MTc2ODA3NDg3OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office desk"
+    },
+    {
+      "id": "category-cabinets",
+      "description": "A wooden storage cabinet.",
+      "imageUrl": "https://images.unsplash.com/photo-1595428774223-ef52624120d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c3RvcmFnZSUyMGNhYmluZXR8ZW58MHx8fHwxNzY4MTE4OTgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "storage cabinet"
+    },
+    {
+      "id": "prod-1-img-1",
+      "description": "Front view of the Zanzibar Serenity Bed.",
+      "imageUrl": "https://images.unsplash.com/photo-1559841771-599b6eeaca62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxxdWVlbiUyMGJlZHxlbnwwfHx8fDE3NjgxMTg5ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "queen bed"
+    },
+    {
+      "id": "prod-1-img-2",
+      "description": "Side view of the Zanzibar Serenity Bed.",
+      "imageUrl": "https://images.unsplash.com/photo-1737467023078-a694673d7cb3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxiZWQlMjBzaWRlfGVufDB8fHx8MTc2ODExODk4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bed side"
+    },
+    {
+      "id": "prod-2-img-1",
+      "description": "Front view of the Spice Isle Sofa.",
+      "imageUrl": "https://images.unsplash.com/photo-1698936061086-2bf99c7b9fc5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0aHJlZS1zZWF0ZXIlMjBzb2ZhfGVufDB8fHx8MTc2ODExODk4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "three-seater sofa"
+    },
+    {
+      "id": "prod-2-img-2",
+      "description": "Spice Isle Sofa in a living room setting.",
+      "imageUrl": "https://images.unsplash.com/photo-1555160877-3cd699cbb0fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzb2ZhJTIwbGl2aW5ncm9vbXxlbnwwfHx8fDE3NjgxMTg5ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sofa livingroom"
+    },
+    {
+      "id": "prod-3-img-1",
+      "description": "Front view of the Swahili Coast Chair.",
+      "imageUrl": "https://images.unsplash.com/photo-1767363592711-1cda1502284d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3b29kZW4lMjBhcm1jaGFpcnxlbnwwfHx8fDE3NjgxMTU2NDR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wooden armchair"
+    },
+    {
+      "id": "prod-4-img-1",
+      "description": "Top view of the Forodhani Dining Table.",
+      "imageUrl": "https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkaW5pbmclMjB0YWJsZXxlbnwwfHx8fDE3NjgwMTQzOTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dining table"
+    },
+    {
+      "id": "prod-5-img-1",
+      "description": "Front view of the Sultan's Cabinet.",
+      "imageUrl": "https://images.unsplash.com/photo-1684846416931-dddf8cbfc2ad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3b29kJTIwY2FiaW5ldHxlbnwwfHx8fDE3NjgxMTg5ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wood cabinet"
+    },
+    {
+      "id": "prod-6-img-1",
+      "description": "Front view of the Nungwi Wardrobe.",
+      "imageUrl": "https://images.unsplash.com/photo-1573311392049-4186e3a47e9c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bGFyZ2UlMjB3YXJkcm9iZXxlbnwwfHx8fDE3NjgxMTA3MzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "large wardrobe"
+    },
+    {
+      "id": "prod-7-img-1",
+      "description": "Front view of the Stone Town Executive Desk.",
+      "imageUrl": "https://images.unsplash.com/photo-1616130007484-24a2c05fdfbe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxleGVjdXRpdmUlMjBkZXNrfGVufDB8fHx8MTc2ODExODk4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "executive desk"
+    },
+    {
+      "id": "prod-8-img-1",
+      "description": "Front view of the Paje Loveseat.",
+      "imageUrl": "https://images.unsplash.com/photo-1550005778-c9ef880d7268?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsb3Zlc2VhdCUyMHNvZmF8ZW58MHx8fHwxNzY4MTE4OTgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "loveseat sofa"
+    },
+    {
+      "id": "prod-9-img-1",
+      "description": "Front view of the Mtoni Accent Chair.",
+      "imageUrl": "https://images.unsplash.com/photo-1758486561455-ebd0d3ba7423?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhY2NlbnQlMjBjaGFpcnxlbnwwfHx8fDE3NjgwODIxNDl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "accent chair"
+    },
+    {
+      "id": "prod-10-img-1",
+      "description": "Front view of the Kendwa Coffee Table.",
+      "imageUrl": "https://images.unsplash.com/photo-1542372147193-a7aca54189cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjB0YWJsZXxlbnwwfHx8fDE3NjgwMjkzMTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coffee table"
+    },
+    {
+      "id": "prod-11-img-1",
+      "description": "Front view of the Pemba Bookshelf.",
+      "imageUrl": "https://images.unsplash.com/photo-1642547863974-b81d5388cc2a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b29kJTIwYm9va3NoZWxmfGVufDB8fHx8MTc2ODExODk4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wood bookshelf"
+    },
+    {
+      "id": "prod-12-img-1",
+      "description": "Front view of the Kiwengwa King Bed.",
+      "imageUrl": "https://images.unsplash.com/photo-1671492542176-670a8daefc7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxraW5nJTIwYmVkfGVufDB8fHx8MTc2ODExODk4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "king bed"
+    },
+    {
+      "id": "prod-13-img-1",
+      "description": "The Forodhani Dining Table set with 6 chairs.",
+      "imageUrl": "https://images.unsplash.com/photo-1651209315802-12190ccfee26?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkaW5pbmclMjBzZXR8ZW58MHx8fHwxNzY4MDA4MTI5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dining set"
+    },
+    {
+      "id": "prod-14-img-1",
+      "description": "Front view of the Ergonomic Office Chair.",
+      "imageUrl": "https://images.unsplash.com/photo-1505797149-43b0069ec26b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxvZmZpY2UlMjBjaGFpcnxlbnwwfHx8fDE3NjgwOTM4MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office chair"
+    },
+    {
+      "id": "prod-15-img-1",
+      "description": "Close-up of the Swahili Coast Chair's woven details.",
+      "imageUrl": "https://images.unsplash.com/photo-1767840272533-7e1c769a2199?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d292ZW4lMjBkZXRhaWx8ZW58MHx8fHwxNzY4MTE4OTgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woven detail"
+    }
+  ]
 }
