@@ -52,7 +52,7 @@ export function Footer() {
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <p>Zanzibar, Tanzania</p>
                 <p>Email: contact@shaabanfurniture.com</p>
-                <p>Phone: +255 777 123 456</p>
+                <p>Phone: +255 686 587 266</p>
             </div>
           </div>
         </div>

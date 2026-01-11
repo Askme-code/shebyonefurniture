@@ -92,7 +92,7 @@ export default function CheckoutPage() {
                                         <FormItem>
                                             <FormLabel>Phone Number</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="0777 123 456" {...field} />
+                                                <Input placeholder="0686 587 266" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
