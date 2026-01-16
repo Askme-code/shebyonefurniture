@@ -4,7 +4,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { File, ListFilter, MoreHorizontal, PlusCircle } from 'lucide-react';
-import { getProducts } from '@/lib/data';
+import { useProducts } from '@/hooks/use-products';
 import type { Product } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ import {
 import { DeleteProductDialog } from '@/components/admin/DeleteProductDialog';
 
 export default function ProductsPage() {
-    const [allProducts, setAllProducts] = React.useState<Product[]>(() => getProducts());
+    const { products: allProducts, deleteProduct } = useProducts();
     const [filteredProducts, setFilteredProducts] = React.useState<Product[]>(allProducts);
     const [activeTab, setActiveTab] = React.useState('all');
 
@@ -59,7 +59,7 @@ export default function ProductsPage() {
     }, [activeTab, allProducts]);
 
     const handleProductDelete = (productId: string) => {
-        setAllProducts(currentProducts => currentProducts.filter(p => p.id !== productId));
+        deleteProduct(productId);
     };
 
     const handleTabChange = (value: string) => {

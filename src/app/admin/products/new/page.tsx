@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getCategories } from '@/lib/data';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useProducts } from '@/hooks/use-products';
 
 const productSchema = z.object({
   name: z.string().min(2, 'Name is too short'),
@@ -32,6 +33,7 @@ export default function NewProductPage() {
   const router = useRouter();
   const { toast } = useToast();
   const categories = getCategories();
+  const { addProduct } = useProducts();
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -46,8 +48,7 @@ export default function NewProductPage() {
   });
 
   const onSubmit = (data: ProductFormValues) => {
-    // In a real app, you'd send this to your backend to create a new product.
-    console.log('New Product Data:', data);
+    addProduct(data);
     toast({
       title: 'Product Created',
       description: `Product "${data.name}" has been created successfully.`,

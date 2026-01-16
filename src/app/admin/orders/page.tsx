@@ -120,7 +120,7 @@ export default function OrdersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="hidden sm:table-cell">
-                    <span className="sr-only"></span>
+                    Order
                   </TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Status</TableHead>
@@ -136,10 +136,10 @@ export default function OrdersPage() {
               <TableBody>
                 {filteredOrders.map(order => (
                     <TableRow key={order.id}>
-                        <TableCell className="hidden sm:table-cell">
+                        <TableCell className="hidden sm:table-cell font-medium">
                             {order.id}
                         </TableCell>
-                        <TableCell className="font-medium">{order.customerName}</TableCell>
+                        <TableCell>{order.customerName}</TableCell>
                         <TableCell>
                             <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}>
                                 {order.status}

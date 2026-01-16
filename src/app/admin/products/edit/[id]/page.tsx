@@ -14,9 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { getCategories, getProductById } from '@/lib/data';
+import { getCategories } from '@/lib/data';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useProducts } from '@/hooks/use-products';
+import type { Product } from '@/lib/types';
+
 
 const productSchema = z.object({
   name: z.string().min(2, 'Name is too short'),
@@ -34,6 +37,7 @@ export default function EditProductPage() {
   const params = useParams();
   const { toast } = useToast();
   const categories = getCategories();
+  const { getProductById, updateProduct } = useProducts();
 
   const productId = params.id as string;
   const product = getProductById(productId);
@@ -56,12 +60,21 @@ export default function EditProductPage() {
   }, [product, form]);
 
   if (!product) {
-    return notFound();
+    // In a real app, you might want to show a loading state
+    // while fetching the product.
+    if (typeof window !== 'undefined') {
+        // notFound() must be called from the root of a component
+        return notFound();
+    }
+    return null;
   }
 
   const onSubmit = (data: ProductFormValues) => {
-    // In a real app, you'd send this to your backend to update the product.
-    console.log('Updated Product Data:', { productId, ...data });
+    const updatedProduct: Product = {
+        ...product,
+        ...data,
+    };
+    updateProduct(updatedProduct);
     toast({
       title: 'Product Updated',
       description: `Product "${data.name}" has been updated successfully.`,
