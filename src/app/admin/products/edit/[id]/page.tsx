@@ -44,6 +44,14 @@ export default function EditProductPage() {
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      category: '',
+      stock: 0,
+      isFeatured: false,
+    },
   });
   
   useEffect(() => {
