@@ -1,8 +1,8 @@
-
 'use client';
 
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { File, ListFilter, MoreHorizontal, PlusCircle } from 'lucide-react';
 import { getProducts } from '@/lib/data';
 import type { Product } from '@/lib/types';
@@ -37,23 +37,33 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { DeleteProductDialog } from '@/components/admin/DeleteProductDialog';
 
 export default function ProductsPage() {
-    const products = getProducts();
-    const [filteredProducts, setFilteredProducts] = React.useState<Product[]>(products);
+    const [allProducts, setAllProducts] = React.useState<Product[]>(() => getProducts());
+    const [filteredProducts, setFilteredProducts] = React.useState<Product[]>(allProducts);
     const [activeTab, setActiveTab] = React.useState('all');
+
+    React.useEffect(() => {
+        let filtered = allProducts;
+        if (activeTab === 'all') {
+            filtered = allProducts;
+        } else if (activeTab === 'active') {
+            filtered = allProducts.filter(p => p.stock > 0);
+        } else if (activeTab === 'draft') {
+            filtered = []; // No draft state in mock data
+        } else if (activeTab === 'archived') {
+            filtered = allProducts.filter(p => p.stock === 0);
+        }
+        setFilteredProducts(filtered);
+    }, [activeTab, allProducts]);
+
+    const handleProductDelete = (productId: string) => {
+        setAllProducts(currentProducts => currentProducts.filter(p => p.id !== productId));
+    };
 
     const handleTabChange = (value: string) => {
         setActiveTab(value);
-        if (value === 'all') {
-            setFilteredProducts(products);
-        } else if (value === 'active') {
-            setFilteredProducts(products.filter(p => p.stock > 0));
-        } else if (value === 'draft') {
-             setFilteredProducts([]);
-        } else if (value === 'archived') {
-             setFilteredProducts(products.filter(p => p.stock === 0));
-        }
     }
 
 
@@ -88,11 +98,13 @@ export default function ProductsPage() {
               Export
             </span>
           </Button>
-          <Button size="sm" className="h-8 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Add Product
-            </span>
+          <Button size="sm" className="h-8 gap-1" asChild>
+            <Link href="/admin/products/new">
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                Add Product
+              </span>
+            </Link>
           </Button>
         </div>
       </div>
@@ -164,8 +176,20 @@ export default function ProductsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                           <Link href={`/admin/products/edit/${product.id}`}>Edit</Link>
+                       </DropdownMenuItem>
+                        <DeleteProductDialog
+                            productName={product.name}
+                            onDelete={() => handleProductDelete(product.id)}
+                        >
+                            <DropdownMenuItem 
+                                onSelect={(e) => e.preventDefault()} 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                                Delete
+                            </DropdownMenuItem>
+                        </DeleteProductDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -176,7 +200,7 @@ export default function ProductsPage() {
           </CardContent>
           <CardFooter>
             <div className="text-xs text-muted-foreground">
-              Showing <strong>1-10</strong> of <strong>{filteredProducts.length}</strong> products
+              Showing <strong>{filteredProducts.length}</strong> of <strong>{allProducts.length}</strong> products
             </div>
           </CardFooter>
         </Card>
