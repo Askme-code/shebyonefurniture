@@ -1,3 +1,4 @@
+'use client';
 
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
