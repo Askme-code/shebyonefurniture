@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/context/CartProvider';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Shaaban Furniture Hub',
@@ -25,6 +26,14 @@ export default function RootLayout({
           {children}
           <Toaster />
         </CartProvider>
+        <div className="gtranslate_wrapper"></div>
+        <Script id="gtranslate-settings" strategy="afterInteractive">
+          {`window.gtranslateSettings = {"default_language":"en","languages":["en","fr","it","es","sw","ar"],"wrapper_selector":".gtranslate_wrapper"}`}
+        </Script>
+        <Script
+          src="https://cdn.gtranslate.net/widgets/latest/float.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
