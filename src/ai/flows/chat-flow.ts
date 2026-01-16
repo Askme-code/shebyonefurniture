@@ -37,7 +37,7 @@ const prompt = ai.definePrompt({
   input: { schema: ChatInputSchema },
   output: { schema: ChatOutputSchema },
   // Include conversation history using Handlebars `{{#each}}` helper
-  prompt: `You are a friendly and helpful customer service chatbot for "Shaaban Furniture Hub", an online furniture store in Zanzibar, Tanzania.
+  prompt: `You are a friendly and helpful customer service chatbot for "Sheby One Furniture", an online furniture store in Zanzibar, Tanzania.
 Your goal is to assist users with their questions about products, orders, and the store. Be conversational and welcoming.
 
 Keep your responses concise and to the point.

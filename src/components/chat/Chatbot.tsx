@@ -33,7 +33,7 @@ export function Chatbot() {
       setMessages([
         {
           role: 'model',
-          content: "Karibu! I'm the Shaaban Furniture assistant. How can I help you find the perfect furniture today?",
+          content: "Karibu! I'm the Sheby One Furniture assistant. How can I help you find the perfect furniture today?",
         },
       ]);
     }

@@ -5,7 +5,7 @@ import { CartProvider } from '@/context/CartProvider';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Shaaban Furniture Hub',
+  title: 'Sheby One Furniture',
   description: 'Modern and custom furniture in Zanzibar, Tanzania.',
 };
 
