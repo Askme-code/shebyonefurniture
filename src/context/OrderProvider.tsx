@@ -3,6 +3,7 @@ import { createContext, ReactNode, useMemo } from 'react';
 import { collectionGroup, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Order } from '@/lib/types';
+import { useAdmin } from '@/hooks/use-admin';
 
 type OrderWithDate = Omit<Order, 'createdAt'> & { createdAt: Date };
 
@@ -16,13 +17,14 @@ export const OrderContext = createContext<{
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   const ordersQuery = useMemoFirebase(
-    () => (firestore ? query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc')) : null),
-    [firestore]
+    () => (firestore && isAdmin ? query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc')) : null),
+    [firestore, isAdmin]
   );
 
-  const { data: rawOrders, isLoading } = useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(ordersQuery);
+  const { data: rawOrders, isLoading: areOrdersLoading } = useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(ordersQuery);
 
   const orders = useMemo(() => {
     if (!rawOrders) return [];
@@ -31,6 +33,8 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
       createdAt: o.createdAt?.toDate() ?? new Date(),
     }));
   }, [rawOrders]);
+
+  const isLoading = isAdminLoading || (isAdmin && areOrdersLoading);
 
   const contextValue = useMemo(() => ({
     orders,
