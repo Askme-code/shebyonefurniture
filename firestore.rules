@@ -1,0 +1,134 @@
+/**
+ * Core Philosophy: This ruleset enforces a two-tiered access model: public/customer versus admin.
+ * Admins have broad read/write access across the database, while customers are restricted to their
+ * own data and can read public data. Anonymous users can only read public data.
+ *
+ * Data Structure:
+ * - /products/{productId}: A public, top-level collection of all products.
+ * - /users/{userId}/orders/{orderId}: A nested collection where orders are privately owned by the user
+ *   specified in the path.
+ * - /roles_admin/{userId}: A lookup collection to identify administrators. The existence of a
+ *   document here grants a user admin privileges across the entire database.
+ *
+ * Key Security Decisions:
+ * - Admin Role Management: Administrator privileges are granted if a document exists for the user
+ *   in the `/roles_admin` collection. This collection is read-only for clients to prevent any
+ *   user from elevating their own permissions. It must be managed by a trusted server process.
+ * - Ownership: Customer data, such as orders, is strictly confined to a user-specific path
+ *   (`/users/{userId}/...`), ensuring users can only ever access their own information.
+ * - Public Data: The `/products` collection is world-readable to allow anyone, including
+ *   unauthenticated users, to browse the product catalog.
+ *
+ * Denormalization for Authorization:
+ * The `/roles_admin/{userId}` collection is a prime example of denormalizing for authorization.
+ * Instead of storing a 'role' field on a user document and requiring slow `get()` calls in rules,
+ * we use a simple and fast `exists()` check against this collection to determine admin status.
+ * This pattern is highly performant and secure.
+ *
+ * Structural Segregation:
+ * The ruleset clearly segregates public data (`/products`) from private, user-owned data
+ * (`/users/{userId}/orders`). This separation is critical for writing secure and efficient rules,
+ * especially for list operations, as it prevents accidental leakage of private data in public queries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user is the owner of the document,
+     * based on the userId provided in the path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the user has an admin role by verifying the existence of
+     * their UID in the roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Verifies that the document being modified or deleted already exists.
+     * Prevents operations on non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * On order creation, validates that the order's internal `userId` field
+     * matches the user ID in the path, ensuring data consistency.
+     */
+    function isOrderDataValidOnCreate(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * On order update, enforces that the `userId` field is immutable,
+     * preventing an order from being reassigned to a different user.
+     */
+    function isOrderDataValidOnUpdate() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Controls access to the public product catalog.
+     * @path /products/{productId}
+     * @allow (get, list) for any user, including unauthenticated users, to browse products.
+     * @deny (create, update, delete) for non-admin users.
+     * @principle Public read access for catalog data, with admin-only write controls.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Controls access to a user's private order history.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow user `user_abc` (create, get, list, update, delete) on `/users/user_abc/orders/{orderId}`. An admin can also perform any of these actions.
+     * @deny user `user_xyz` any access to `/users/user_abc/orders/{orderId}`.
+     * @principle Enforces strict data ownership, while allowing admin oversight. Validates relational integrity on writes.
+     */
+    match /users/{userId}/orders/{orderId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isOrderDataValidOnCreate(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isOrderDataValidOnUpdate();
+      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    }
+
+    /**
+     * @description Controls access to the admin role lookup collection.
+     * @path /roles_admin/{userId}
+     * @allow An admin (get, list) to see the list of other admins.
+     * @deny All write operations (create, update, delete) from any client to prevent privilege escalation.
+     * @principle Secures the authorization mechanism itself. This collection should only be managed by a trusted backend server.
+     */
+    match /roles_admin/{userId} {
+      allow get, list: if isAdmin();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
