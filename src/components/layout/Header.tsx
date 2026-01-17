@@ -22,6 +22,8 @@ export function Header() {
     { href: '/', label: 'Home' },
     { href: '/products', label: 'All Products' },
     ...categories.map(c => ({ href: `/category/${c.id}`, label: c.name })),
+    { href: '/about', label: 'About Us' },
+    { href: '/contact', label: 'Contact' },
   ];
 
   return (
@@ -34,6 +36,12 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/products" className="transition-colors hover:text-primary">
               All Products
+            </Link>
+            <Link href="/about" className="transition-colors hover:text-primary">
+              About Us
+            </Link>
+            <Link href="/contact" className="transition-colors hover:text-primary">
+              Contact
             </Link>
           </nav>
         </div>

@@ -42,9 +42,9 @@ export function Footer() {
           <div>
             <h3 className="font-headline text-lg font-semibold">About Us</h3>
             <ul className="mt-4 space-y-2 text-sm">
-              <li><a href="#" className="text-muted-foreground hover:text-primary">Our Story</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary">Custom Orders</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary">Contact</a></li>
+              <li><Link href="/about" className="text-muted-foreground hover:text-primary">Our Story</Link></li>
+              <li><a href="https://wa.me/255686587266" className="text-muted-foreground hover:text-primary">Custom Orders</a></li>
+              <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact</Link></li>
             </ul>
           </div>
           <div>
