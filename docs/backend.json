@@ -166,18 +166,14 @@
         }
       },
       {
-        "path": "/users/{userId}/orders/{orderId}",
+        "path": "/orders/{orderId}",
         "definition": {
           "entityName": "Order",
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores customer order information. Customers can only access their own orders, while admins can access all orders.",
+          "description": "Stores all customer orders in a single collection. Customers can query for their own orders, while admins can access all orders.",
           "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            },
             {
               "name": "orderId",
               "description": "Unique identifier for the order."
@@ -202,6 +198,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a subcollection `users/{userId}/orders`. This ensures that customers can only access their own orders, directly mapping to their user ID in the path.  Admin access to all orders is enabled by checking for the admin role in the security rules. The userId is embedded in the path, which enables performant filtering based on the currently signed in user.\n3.  **Users:** User roles are managed via a dedicated `roles_admin` collection. The presence of a document with the user's ID indicates admin status.  This existence-based check is efficient and avoids complex data comparisons in security rules.\n\nThis structure facilitates secure `list` operations (QAPs) by:\n\n*   Segregating user-specific data (orders) under user-owned paths.\n*   Using a dedicated `/roles_admin` collection for global role management, enabling efficient authorization checks.\n\nData clarity is achieved through explicit naming conventions and schema definitions for each entity."
+    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a top-level `orders` collection. This structure allows admins to efficiently query all orders for the admin dashboard. Security rules ensure that users can only read/write their own orders (by checking the `userId` field in the order document), while admins have full access. This avoids the limitations of securing collection group queries with `exists()` or `get()` calls to other documents.\n3.  **Users:** User roles are managed via a dedicated `roles_admin` collection. The presence of a document with the user's ID indicates admin status.  This existence-based check is efficient and avoids complex data comparisons in security rules.\n\nThis structure facilitates secure `list` operations (QAPs) by:\n\n*   Using a top-level collection for orders, which can be directly and efficiently queried by admins.\n*   Securing user-specific data (orders) based on a `userId` field within the document, allowing users to securely query for their own data without being able to see others'.\n*   Using a dedicated `/roles_admin` collection for global role management, enabling efficient authorization checks."
   }
 }

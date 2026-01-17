@@ -66,7 +66,7 @@ export default function CheckoutPage() {
         userId: user.uid,
     };
     
-    const ordersCollection = collection(firestore, `users/${user.uid}/orders`);
+    const ordersCollection = collection(firestore, 'orders');
     addDocumentNonBlocking(ordersCollection, orderData);
     
     toast({

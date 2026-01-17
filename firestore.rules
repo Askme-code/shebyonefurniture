@@ -1,3 +1,4 @@
+
 /**
  * Core Philosophy: This ruleset enforces a two-tiered access model: public/customer versus admin.
  * Admins have broad read/write access across the database, while customers are restricted to their
@@ -5,8 +6,7 @@
  *
  * Data Structure:
  * - /products/{productId}: A public, top-level collection of all products.
- * - /users/{userId}/orders/{orderId}: A nested collection where orders are privately owned by the user
- *   specified in the path.
+ * - /orders/{orderId}: A top-level collection of all orders. Orders contain a `userId` field to link them to their owner.
  * - /roles_admin/{userId}: A lookup collection to identify administrators. The existence of a
  *   document here grants a user admin privileges across the entire database.
  *
@@ -14,8 +14,8 @@
  * - Admin Role Management: Administrator privileges are granted if a document exists for the user
  *   in the `/roles_admin` collection. This collection is read-only for clients to prevent any
  *   user from elevating their own permissions. It must be managed by a trusted server process.
- * - Ownership: Customer data, such as orders, is strictly confined to a user-specific path
- *   (`/users/{userId}/...`), ensuring users can only ever access their own information.
+ * - Ownership: Customer data, such as orders, is secured by a `userId` field within the document itself.
+ *   This ensures users can only ever access their own information, even in a shared, top-level collection.
  * - Public Data: The `/products` collection is world-readable to allow anyone, including
  *   unauthenticated users, to browse the product catalog.
  *
@@ -25,10 +25,6 @@
  * we use a simple and fast `exists()` check against this collection to determine admin status.
  * This pattern is highly performant and secure.
  *
- * Structural Segregation:
- * The ruleset clearly segregates public data (`/products`) from private, user-owned data
- * (`/users/{userId}/orders`). This separation is critical for writing secure and efficient rules,
- * especially for list operations, as it prevents accidental leakage of private data in public queries.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -70,14 +66,6 @@ service cloud.firestore {
     }
 
     /**
-     * On order creation, validates that the order's internal `userId` field
-     * matches the user ID in the path, ensuring data consistency.
-     */
-    function isOrderDataValidOnCreate(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    /**
      * On order update, enforces that the `userId` field is immutable,
      * preventing an order from being reassigned to a different user.
      */
@@ -104,18 +92,18 @@ service cloud.firestore {
     }
 
     /**
-     * @description Controls access to a user's private order history.
-     * @path /users/{userId}/orders/{orderId}
-     * @allow user `user_abc` (create, get, list, update, delete) on `/users/user_abc/orders/{orderId}`. An admin can also perform any of these actions.
-     * @deny user `user_xyz` any access to `/users/user_abc/orders/{orderId}`.
-     * @principle Enforces strict data ownership, while allowing admin oversight. Validates relational integrity on writes.
+     * @description Controls access to the top-level orders collection.
+     * @path /orders/{orderId}
+     * @allow (read) for an admin OR if the user is the owner of the order document.
+     * @allow (create) if the user is the owner of the new order.
+     * @allow (update, delete) for an admin OR if the user is the owner.
+     * @principle A query from a user must be constrained with `where('userId', '==', auth.uid)` on the client.
      */
-    match /users/{userId}/orders/{orderId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isOrderDataValidOnCreate(userId);
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isOrderDataValidOnUpdate();
-      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isExistingDoc() && isOwner(resource.data.userId));
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if (isAdmin() || (isExistingDoc() && isOwner(resource.data.userId))) && isOrderDataValidOnUpdate();
+      allow delete: if isAdmin() || (isExistingDoc() && isOwner(resource.data.userId));
     }
 
     /**

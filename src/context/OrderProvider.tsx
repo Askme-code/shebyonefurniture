@@ -1,6 +1,6 @@
 'use client';
 import { createContext, ReactNode, useMemo } from 'react';
-import { collectionGroup, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Order } from '@/lib/types';
 
@@ -17,10 +17,9 @@ export const OrderContext = createContext<{
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
 
-  // Since AdminLayout already verifies the user is an admin before rendering this provider,
-  // we can simplify the logic and directly create the query.
+  // Query the top-level 'orders' collection. This is now allowed for admins.
   const ordersQuery = useMemoFirebase(
-    () => (firestore ? query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc')) : null),
+    () => (firestore ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc')) : null),
     [firestore]
   );
 
