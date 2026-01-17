@@ -121,13 +121,13 @@ service cloud.firestore {
     /**
      * @description Controls access to the admin role lookup collection.
      * @path /roles_admin/{userId}
-     * @allow (get) Any signed-in user can check their own role status.
+     * @allow (get) A signed-in user can check their own role status.
      * @allow (list) An admin to see the list of other admins.
      * @deny All write operations (create, update, delete) from any client to prevent privilege escalation.
      * @principle Secures the authorization mechanism itself. This collection should only be managed by a trusted backend server.
      */
     match /roles_admin/{userId} {
-      allow get: if isSignedIn();
+      allow get: if isOwner(userId);
       allow list: if isAdmin();
       allow create: if false;
       allow update: if false;
