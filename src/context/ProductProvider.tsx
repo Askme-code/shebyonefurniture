@@ -46,7 +46,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     if (!rawProducts) return [];
     return rawProducts.map(p => ({
       ...p,
-      createdAt: p.createdAt.toDate(),
+      createdAt: p.createdAt ? p.createdAt.toDate() : new Date(),
     }));
   }, [rawProducts]);
   
