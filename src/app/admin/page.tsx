@@ -1,10 +1,10 @@
+'use client';
 
 import {
   Activity,
   ArrowUpRight,
   CreditCard,
   DollarSign,
-  Users,
   Package,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -27,15 +27,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getOrders, getProducts } from '@/lib/data';
+import { useOrders } from '@/hooks/use-orders';
+import { useProducts } from '@/hooks/use-products';
+
 
 export default function Dashboard() {
-    const orders = getOrders();
-    const products = getProducts();
+    const { orders, isLoading: isLoadingOrders } = useOrders();
+    const { products, isLoading: isLoadingProducts } = useProducts();
+
     const totalRevenue = orders.reduce((sum, order) => order.status === 'Delivered' ? sum + order.total : sum, 0);
     const pendingOrders = orders.filter(o => o.status === 'Pending').length;
     const totalProducts = products.length;
     const outOfStock = products.filter(p => p.stock === 0).length;
+
+    if (isLoadingOrders || isLoadingProducts) {
+       return (
+        <div className="flex items-center justify-center h-full">
+            <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                <span>Loading dashboard data...</span>
+            </div>
+        </div>
+       )
+    }
 
   return (
     <div className="flex flex-col gap-4">

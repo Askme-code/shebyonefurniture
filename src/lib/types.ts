@@ -28,15 +28,23 @@ export type CartItem = {
   quantity: number;
 };
 
+export type OrderItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+};
+
 export type Order = {
   id: string;
   customerName: string;
   phone: string;
   address: string;
-  items: CartItem[];
+  items: OrderItem[];
   total: number;
   status: 'Pending' | 'Processing' | 'Delivered' | 'Cancelled';
   createdAt: Date;
+  userId: string;
 };
 
 export type User = {

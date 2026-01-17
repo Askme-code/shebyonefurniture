@@ -104,6 +104,16 @@ service cloud.firestore {
     }
 
     /**
+     * @description Allows admins to list all orders across all users via a collection group query.
+     * @path /{path=**}/orders/{orderId}
+     * @allow (list) for admins.
+     * @principle Enables centralized admin oversight of all orders.
+     */
+    match /{path=**}/orders/{orderId} {
+      allow list: if isAdmin();
+    }
+
+    /**
      * @description Controls access to a user's private order history.
      * @path /users/{userId}/orders/{orderId}
      * @allow user `user_abc` (create, get, list, update, delete) on `/users/user_abc/orders/{orderId}`. An admin can also perform any of these actions.
@@ -111,7 +121,8 @@ service cloud.firestore {
      * @principle Enforces strict data ownership, while allowing admin oversight. Validates relational integrity on writes.
      */
     match /users/{userId}/orders/{orderId} {
-      allow get, list: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId) && isOrderDataValidOnCreate(userId);
       allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isOrderDataValidOnUpdate();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();

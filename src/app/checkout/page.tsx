@@ -3,7 +3,6 @@ import { useCart } from '@/hooks/use-cart';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useForm } from 'react-hook-form';
@@ -13,6 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 const checkoutSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -26,6 +27,8 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -37,13 +40,34 @@ export default function CheckoutPage() {
   });
 
   const onSubmit = (data: CheckoutFormValues) => {
-    console.log("Order Submitted:", {
-        ...data,
-        items,
+    if (!user || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to place an order.',
+        });
+        router.push('/login');
+        return;
+    }
+
+    const orderData = {
+        customerName: data.name,
+        phone: data.phone,
+        address: data.address,
+        items: items.map(item => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+        })),
         total: totalPrice,
-    });
+        status: 'Pending',
+        createdAt: serverTimestamp(),
+        userId: user.uid,
+    };
     
-    // Here you would typically send this data to your backend/Firestore
+    const ordersCollection = collection(firestore, `users/${user.uid}/orders`);
+    addDocumentNonBlocking(ordersCollection, orderData);
     
     toast({
       title: "Order Placed!",

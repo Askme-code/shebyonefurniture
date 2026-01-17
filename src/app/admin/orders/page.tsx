@@ -5,7 +5,6 @@ import {
   ListFilter,
   File,
 } from 'lucide-react';
-import { getOrders } from '@/lib/data';
 import type { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,24 +39,37 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { useOrders } from '@/hooks/use-orders';
 
 export default function OrdersPage() {
-    const orders = getOrders();
+    const { orders, isLoading } = useOrders();
 
     const [filteredOrders, setFilteredOrders] = React.useState<Order[]>(orders);
     const [activeTab, setActiveTab] = React.useState('all');
 
-    const handleTabChange = (value: string) => {
-        setActiveTab(value);
-        if (value === 'all') {
-            setFilteredOrders(orders);
+    React.useEffect(() => {
+        let filtered = orders;
+        if (activeTab === 'all') {
+            filtered = orders;
         } else {
-            setFilteredOrders(orders.filter(order => order.status.toLowerCase() === value));
+            filtered = orders.filter(order => order.status.toLowerCase() === activeTab);
         }
+        setFilteredOrders(filtered);
+    }, [activeTab, orders]);
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <span>Loading orders...</span>
+                </div>
+            </div>
+        )
     }
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange}>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center">
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
@@ -107,7 +119,7 @@ export default function OrdersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="hidden sm:table-cell">
-                    Order
+                    Order ID
                   </TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Status</TableHead>
