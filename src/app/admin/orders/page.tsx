@@ -1,15 +1,9 @@
-
 'use client';
 import * as React from 'react';
 import {
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  CreditCard,
-  File,
-  ListFilter,
   MoreVertical,
-  Truck,
+  ListFilter,
+  File,
 } from 'lucide-react';
 import { getOrders } from '@/lib/data';
 import type { Order } from '@/lib/types';
@@ -32,13 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from '@/components/ui/pagination';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -141,7 +128,7 @@ export default function OrdersPage() {
                         </TableCell>
                         <TableCell>{order.customerName}</TableCell>
                         <TableCell>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}>
+                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Processing' ? 'secondary' : 'outline'}>
                                 {order.status}
                             </Badge>
                         </TableCell>

@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useReducer, ReactNode, useCallback } from 'react';
+import { createContext, useReducer, ReactNode, useCallback, useEffect } from 'react';
 import type { Product } from '@/lib/types';
 import { products as initialProducts } from '@/lib/data';
 
@@ -59,6 +59,29 @@ export const ProductContext = createContext<{
 
 export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(productReducer, initialState);
+
+  useEffect(() => {
+    try {
+      const storedProducts = localStorage.getItem('products');
+      if (storedProducts) {
+        const parsedProducts = JSON.parse(storedProducts).map((p: Product) => ({
+            ...p,
+            createdAt: new Date(p.createdAt),
+        }));
+        dispatch({ type: 'SET_PRODUCTS', payload: parsedProducts });
+      }
+    } catch (error) {
+      console.error("Could not parse products from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+        localStorage.setItem('products', JSON.stringify(state.products));
+    } catch (error) {
+        console.error("Could not save products to localStorage", error);
+    }
+  }, [state.products]);
 
   const getProductById = useCallback((id: string) => {
     return state.products.find(p => p.id === id);

@@ -112,9 +112,6 @@ export default function Dashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Customer</TableHead>
-                  <TableHead className="hidden xl:table-cell">
-                    Type
-                  </TableHead>
                   <TableHead className="hidden xl:table-cell">Status</TableHead>
                   <TableHead className="hidden xl:table-cell">Date</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
@@ -129,9 +126,8 @@ export default function Dashboard() {
                             {order.phone}
                             </div>
                         </TableCell>
-                        <TableCell className="hidden xl:table-cell">Sale</TableCell>
                         <TableCell className="hidden xl:table-cell">
-                            <Badge className="text-xs" variant={order.status === 'Delivered' ? 'default' : order.status === 'Pending' ? 'secondary' : 'destructive'}>
+                            <Badge className="text-xs" variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Processing' ? 'secondary' : 'outline'}>
                                 {order.status}
                             </Badge>
                         </TableCell>
