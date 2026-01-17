@@ -2,21 +2,9 @@
 
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
-import {
-  Home,
-  Package,
-  ShoppingCart,
-  Users,
-  LineChart,
-  Settings,
-  PanelLeft,
-} from 'lucide-react';
+import { Home, Package, ShoppingCart, Settings, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   Tooltip,
   TooltipContent,
@@ -24,12 +12,35 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ProductProvider } from '@/context/ProductProvider';
+import { useAdmin } from '@/hooks/use-admin';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { isAdmin, isLoading } = useAdmin();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAdmin) {
+      router.push('/login');
+    }
+  }, [isAdmin, isLoading, router]);
+
+  if (isLoading || !isAdmin) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          <span>Loading & Verifying Access...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ProductProvider>
       <TooltipProvider>
