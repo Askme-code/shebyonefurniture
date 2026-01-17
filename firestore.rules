@@ -104,16 +104,6 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows admins to list all orders across all users via a collection group query.
-     * @path /{path=**}/orders/{orderId}
-     * @allow (list) for admins.
-     * @principle Enables centralized admin oversight of all orders.
-     */
-    match /{path=**}/orders/{orderId} {
-      allow list: if isAdmin();
-    }
-
-    /**
      * @description Controls access to a user's private order history.
      * @path /users/{userId}/orders/{orderId}
      * @allow user `user_abc` (create, get, list, update, delete) on `/users/user_abc/orders/{orderId}`. An admin can also perform any of these actions.
