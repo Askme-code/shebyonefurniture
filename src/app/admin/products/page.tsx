@@ -40,7 +40,7 @@ import {
 import { DeleteProductDialog } from '@/components/admin/DeleteProductDialog';
 
 export default function ProductsPage() {
-    const { products: allProducts, deleteProduct } = useProducts();
+    const { products: allProducts, deleteProduct, isLoading } = useProducts();
     const [filteredProducts, setFilteredProducts] = React.useState<Product[]>(allProducts);
     const [activeTab, setActiveTab] = React.useState('all');
 
@@ -56,7 +56,7 @@ export default function ProductsPage() {
             filtered = allProducts.filter(p => p.stock === 0);
         }
         setFilteredProducts(filtered);
-    }, [activeTab, allProducts]);
+    }, [activeTab, allProducts, isLoading]);
 
     const handleProductDelete = (productId: string) => {
         deleteProduct(productId);
@@ -64,6 +64,17 @@ export default function ProductsPage() {
 
     const handleTabChange = (value: string) => {
         setActiveTab(value);
+    }
+    
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <span>Loading products...</span>
+                </div>
+            </div>
+        )
     }
 
 

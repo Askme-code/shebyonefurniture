@@ -1,112 +1,107 @@
 'use client';
-import { createContext, useReducer, ReactNode, useCallback, useEffect } from 'react';
+import { createContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Product } from '@/lib/types';
-import { products as initialProducts } from '@/lib/data';
+import { 
+    useFirestore, 
+    useCollection,
+    useMemoFirebase,
+    addDocumentNonBlocking,
+    updateDocumentNonBlocking,
+    deleteDocumentNonBlocking
+} from '@/firebase';
+import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
-type ProductState = {
-  products: Product[];
-};
-
-type ProductAction =
-  | { type: 'SET_PRODUCTS'; payload: Product[] }
-  | { type: 'ADD_PRODUCT'; payload: Product }
-  | { type: 'UPDATE_PRODUCT'; payload: Product }
-  | { type: 'DELETE_PRODUCT'; payload: { productId: string } };
-
-const productReducer = (state: ProductState, action: ProductAction): ProductState => {
-  switch (action.type) {
-    case 'SET_PRODUCTS':
-        return { products: action.payload };
-    case 'ADD_PRODUCT':
-      return {
-        ...state,
-        products: [action.payload, ...state.products],
-      };
-    case 'UPDATE_PRODUCT':
-      return {
-        ...state,
-        products: state.products.map((p) =>
-          p.id === action.payload.id ? action.payload : p
-        ),
-      };
-    case 'DELETE_PRODUCT':
-      return {
-        ...state,
-        products: state.products.filter((p) => p.id !== action.payload.productId),
-      };
-    default:
-      return state;
-  }
-};
-
-const initialState: ProductState = {
-  products: initialProducts,
-};
-
+// Define the shape of the context
 export const ProductContext = createContext<{
   products: Product[];
+  isLoading: boolean;
   getProductById: (id: string) => Product | undefined;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'images'>) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
 }>({
-  products: initialState.products,
+  products: [],
+  isLoading: true,
   getProductById: () => undefined,
   addProduct: () => {},
   updateProduct: () => {},
   deleteProduct: () => {},
 });
 
+// The provider component
 export const ProductProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(productReducer, initialState);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    try {
-      const storedProducts = localStorage.getItem('products');
-      if (storedProducts) {
-        const parsedProducts = JSON.parse(storedProducts).map((p: Product) => ({
-            ...p,
-            createdAt: new Date(p.createdAt),
-        }));
-        dispatch({ type: 'SET_PRODUCTS', payload: parsedProducts });
-      }
-    } catch (error) {
-      console.error("Could not parse products from localStorage", error);
-    }
-  }, []);
+  // Memoize the collection reference
+  const productsCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'products') : null),
+    [firestore]
+  );
+  
+  // Subscribe to the collection
+  const { data: rawProducts, isLoading } = useCollection<Omit<Product, 'createdAt'> & { createdAt: Timestamp }>(productsCollectionRef);
 
-  useEffect(() => {
-    try {
-        localStorage.setItem('products', JSON.stringify(state.products));
-    } catch (error) {
-        console.error("Could not save products to localStorage", error);
-    }
-  }, [state.products]);
+  // Memoize and process products: convert Timestamps to Dates
+  const products = useMemo(() => {
+    if (!rawProducts) return [];
+    return rawProducts.map(p => ({
+      ...p,
+      createdAt: p.createdAt.toDate(),
+    }));
+  }, [rawProducts]);
+  
 
-  const getProductById = useCallback((id: string) => {
-    return state.products.find(p => p.id === id);
-  }, [state.products]);
+  const getProductById = useCallback((id: string): Product | undefined => {
+    return products.find(p => p.id === id);
+  }, [products]);
 
-  const addProduct = (productData: Omit<Product, 'id' | 'createdAt' | 'images'>) => {
-    const newProduct: Product = {
+
+  const addProduct = useCallback((productData: Omit<Product, 'id' | 'createdAt' | 'images'>) => {
+    if (!firestore) return;
+
+    const productsCollection = collection(firestore, 'products');
+    const newProduct = {
         ...productData,
-        id: `prod-${Date.now()}`,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
         images: [{ url: 'https://placehold.co/800x600', hint: 'placeholder' }],
     };
-    dispatch({ type: 'ADD_PRODUCT', payload: newProduct });
-  };
+    
+    addDocumentNonBlocking(productsCollection, newProduct);
+  }, [firestore]);
 
-  const updateProduct = (product: Product) => {
-    dispatch({ type: 'UPDATE_PRODUCT', payload: product });
-  };
 
-  const deleteProduct = (productId: string) => {
-    dispatch({ type: 'DELETE_PRODUCT', payload: { productId } });
-  };
+  const updateProduct = useCallback((product: Product) => {
+    if (!firestore) return;
+    const productDocRef = doc(firestore, 'products', product.id);
+    
+    // The `updateDocumentNonBlocking` needs a plain object.
+    const productToUpdate = {
+        ...product,
+        createdAt: product.createdAt, // Should already be a Date object from the `products` memo
+    };
+    
+    updateDocumentNonBlocking(productDocRef, productToUpdate);
+  }, [firestore]);
+
+
+  const deleteProduct = useCallback((productId: string) => {
+    if (!firestore) return;
+    const productDocRef = doc(firestore, 'products', productId);
+    deleteDocumentNonBlocking(productDocRef);
+  }, [firestore]);
+
+
+  const contextValue = useMemo(() => ({
+    products,
+    isLoading,
+    getProductById,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+  }), [products, isLoading, getProductById, addProduct, updateProduct, deleteProduct]);
 
   return (
-    <ProductContext.Provider value={{ products: state.products, getProductById, addProduct, updateProduct, deleteProduct }}>
+    <ProductContext.Provider value={contextValue}>
       {children}
     </ProductContext.Provider>
   );
