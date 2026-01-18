@@ -16,7 +16,6 @@ import { OrderProvider } from '@/context/OrderProvider';
 import { useAdmin } from '@/hooks/use-admin';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 export default function AdminLayout({
   children,
@@ -25,20 +24,18 @@ export default function AdminLayout({
 }) {
   const { isAdmin, isLoading } = useAdmin();
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
+    // If the user check is complete and they are not an admin (i.e., not logged in),
+    // redirect them to the login page.
     if (!isLoading && !isAdmin) {
-      toast({
-        title: 'Access Denied',
-        description: "You do not have permissions to access the admin dashboard.",
-        variant: 'destructive',
-      });
-      router.push('/');
+      router.push('/login');
     }
-  }, [isAdmin, isLoading, router, toast]);
+  }, [isAdmin, isLoading, router]);
 
-  if (isLoading) {
+  // While checking for admin status, show a loading indicator.
+  // Or if we are about to redirect, show loading to prevent flashing content.
+  if (isLoading || !isAdmin) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex items-center space-x-2">
@@ -49,10 +46,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!isAdmin) {
-    return null; // Don't render anything for non-admins, redirect will occur
-  }
-
+  // If the user is an admin, render the layout.
   return (
     <ProductProvider>
       <OrderProvider>
