@@ -20,7 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAuth, useAdmin } from '@/firebase';
+import { useAuth } from '@/firebase';
+import { useAdmin } from '@/hooks/use-admin';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
