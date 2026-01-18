@@ -27,11 +27,11 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
-      router.push('/login');
+      router.push('/');
     }
   }, [isAdmin, isLoading, router]);
 
-  if (isLoading || !isAdmin) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex items-center space-x-2">
@@ -40,6 +40,10 @@ export default function AdminLayout({
         </div>
       </div>
     );
+  }
+
+  if (!isAdmin) {
+    return null; // Don't render anything for non-admins, redirect will occur
   }
 
   return (
