@@ -24,9 +24,8 @@ import {
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { AuthRedirector } from '@/components/auth/AuthRedirector';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -38,19 +37,12 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const router = useRouter();
   const { toast } = useToast();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { email: '', password: '' },
   });
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/admin');
-    }
-  }, [user, isUserLoading, router]);
 
   const onSubmit = (data: RegisterFormValues) => {
     initiateEmailSignUp(auth, data.email, data.password);
@@ -61,14 +53,7 @@ export default function RegisterPage() {
   };
   
   if (isUserLoading || user) {
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                <span>Loading...</span>
-            </div>
-        </div>
-      )
+    return <AuthRedirector />;
   }
 
   return (

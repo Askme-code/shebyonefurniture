@@ -4,8 +4,6 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import {
   Form,
@@ -29,6 +27,7 @@ import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useToast } from '@/hooks/use-toast';
+import { AuthRedirector } from '@/components/auth/AuthRedirector';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -40,19 +39,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const router = useRouter();
   const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/admin');
-    }
-  }, [user, isUserLoading, router]);
 
   const onSubmit = (data: LoginFormValues) => {
     initiateEmailSignIn(auth, data.email, data.password);
@@ -63,14 +55,7 @@ export default function LoginPage() {
   };
   
   if (isUserLoading || user) {
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                <span>Loading...</span>
-            </div>
-        </div>
-      )
+      return <AuthRedirector />;
   }
 
   return (

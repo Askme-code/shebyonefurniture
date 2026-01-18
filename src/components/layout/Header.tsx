@@ -8,7 +8,8 @@ import { Logo } from './Logo';
 import { useCart } from '@/hooks/use-cart';
 import { categories } from '@/lib/data';
 import { useEffect, useState } from 'react';
-import { useUser, useAuth } from '@/firebase';
+import { useAuth } from '@/firebase';
+import { useAdmin } from '@/hooks/use-admin';
 import { signOut } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -31,12 +32,13 @@ export function Header() {
     setMounted(true);
   }, []);
 
-  const { user, isUserLoading } = useUser();
+  const { user, isAdmin, isLoading } = useAdmin();
   const auth = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
     signOut(auth);
+    router.push('/');
   };
 
   const navLinks = [
@@ -79,8 +81,8 @@ export function Header() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isUserLoading ? (
-              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+            {isLoading ? (
+              <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -99,11 +101,18 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/admin')}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </DropdownMenuItem>
-                   <DropdownMenuItem>
+                  {isAdmin ? (
+                     <DropdownMenuItem onClick={() => router.push('/admin')}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
+                     </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => router.push('/account')}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>My Account</span>
+                    </DropdownMenuItem>
+                  )}
+                   <DropdownMenuItem onClick={() => router.push('/account')}>
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
