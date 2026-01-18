@@ -2,7 +2,18 @@
 
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
-import { Home, Package, ShoppingCart, Settings, PanelLeft } from 'lucide-react';
+import {
+  Home,
+  Package,
+  ClipboardList,
+  Users,
+  MessageSquare,
+  Star,
+  BarChart,
+  ShoppingCart,
+  Settings,
+  PanelLeft,
+} from 'lucide-react';
 import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -27,9 +38,9 @@ export default function AdminLayout({
 
   useEffect(() => {
     // If the user check is complete and they are not an admin (i.e., not logged in),
-    // redirect them to the login page.
+    // redirect them to the home page.
     if (!isLoading && !isAdmin) {
-      router.push('/login');
+      router.push('/');
     }
   }, [isAdmin, isLoading, router]);
 
@@ -37,10 +48,16 @@ export default function AdminLayout({
   // Or if we are about to redirect, show loading to prevent flashing content.
   if (isLoading || !isAdmin) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          <span>Loading & Verifying Access...</span>
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex items-center space-x-2 text-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <span>Verifying Access...</span>
+          </div>
+          <p className="text-muted-foreground">
+            You need to be an administrator to access this page.
+          </p>
+          <Button variant="outline" onClick={() => router.push('/')}>Go to Homepage</Button>
         </div>
       </div>
     );
@@ -77,9 +94,9 @@ export default function AdminLayout({
                   <TooltipTrigger asChild>
                     <Link
                       href="/admin/orders"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                     >
-                      <ShoppingCart className="h-5 w-5" />
+                      <ClipboardList className="h-5 w-5" />
                       <span className="sr-only">Orders</span>
                     </Link>
                   </TooltipTrigger>
@@ -96,6 +113,66 @@ export default function AdminLayout({
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right">Products</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/admin/users"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    >
+                      <Users className="h-5 w-5" />
+                      <span className="sr-only">User Management</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">User Management</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/admin/carts"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      <span className="sr-only">Cart Management</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Cart Management</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/admin/messages"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    >
+                      <MessageSquare className="h-5 w-5" />
+                      <span className="sr-only">Message Management</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Message Management</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/admin/reviews"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    >
+                      <Star className="h-5 w-5" />
+                      <span className="sr-only">Review Management</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Review Management</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/admin/reports"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    >
+                      <BarChart className="h-5 w-5" />
+                      <span className="sr-only">Reports & Analytics</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Reports & Analytics</TooltipContent>
                 </Tooltip>
               </nav>
               <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
@@ -140,9 +217,9 @@ export default function AdminLayout({
                       </Link>
                       <Link
                         href="/admin/orders"
-                        className="flex items-center gap-4 px-2.5 text-foreground"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                       >
-                        <ShoppingCart className="h-5 w-5" />
+                        <ClipboardList className="h-5 w-5" />
                         Orders
                       </Link>
                       <Link
@@ -151,6 +228,41 @@ export default function AdminLayout({
                       >
                         <Package className="h-5 w-5" />
                         Products
+                      </Link>
+                      <Link
+                        href="/admin/users"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <Users className="h-5 w-5" />
+                        User Management
+                      </Link>
+                      <Link
+                        href="/admin/carts"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <ShoppingCart className="h-5 w-5" />
+                        Cart Management
+                      </Link>
+                      <Link
+                        href="/admin/messages"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <MessageSquare className="h-5 w-5" />
+                        Message Management
+                      </Link>
+                      <Link
+                        href="/admin/reviews"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <Star className="h-5 w-5" />
+                        Review Management
+                      </Link>
+                      <Link
+                        href="/admin/reports"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <BarChart className="h-5 w-5" />
+                        Reports & Analytics
                       </Link>
                     </nav>
                   </SheetContent>
