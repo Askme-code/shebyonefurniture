@@ -16,6 +16,7 @@ import { OrderProvider } from '@/context/OrderProvider';
 import { useAdmin } from '@/hooks/use-admin';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminLayout({
   children,
@@ -24,12 +25,18 @@ export default function AdminLayout({
 }) {
   const { isAdmin, isLoading } = useAdmin();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
+      toast({
+        title: 'Access Denied',
+        description: "You do not have permissions to access the admin dashboard.",
+        variant: 'destructive',
+      });
       router.push('/');
     }
-  }, [isAdmin, isLoading, router]);
+  }, [isAdmin, isLoading, router, toast]);
 
   if (isLoading) {
     return (
