@@ -112,7 +112,7 @@ service cloud.firestore {
      * @principle A query from a user must be constrained with `where('userId', '==', auth.uid)` on the client.
      */
     match /orders/{orderId} {
-      allow read: if isAdmin() || (isExistingDoc() && isOwner(resource.data.userId));
+      allow read: if isAdmin() || isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
       allow update: if (isAdmin() || (isExistingDoc() && isOwner(resource.data.userId))) && isOrderDataValidOnUpdate();
       allow delete: if isAdmin() || (isExistingDoc() && isOwner(resource.data.userId));
