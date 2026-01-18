@@ -138,6 +138,28 @@
         "id",
         "role"
       ]
+    },
+    "NewsletterSubscriber": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Newsletter Subscriber",
+      "type": "object",
+      "description": "Represents a user who has subscribed to the newsletter.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email address of the subscriber.",
+          "format": "email"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user subscribed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "email",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -193,6 +215,22 @@
             {
               "name": "userId",
               "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/newsletter_subscribers/{subscriberId}",
+        "definition": {
+          "entityName": "NewsletterSubscriber",
+          "schema": {
+            "$ref": "#/backend/entities/NewsletterSubscriber"
+          },
+          "description": "Stores email addresses of users subscribed to the newsletter. Publicly writable for sign-ups, admin-only readable.",
+          "params": [
+            {
+              "name": "subscriberId",
+              "description": "Unique identifier for the subscription."
             }
           ]
         }

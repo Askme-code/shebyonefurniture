@@ -4,6 +4,20 @@ import Link from 'next/link';
 import { MapPin, Mail, Phone, Twitter, Facebook, Linkedin, Instagram, ArrowUp, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useToast } from '@/hooks/use-toast';
+import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+
+const newsletterSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email." }),
+});
+
+type NewsletterFormValues = z.infer<typeof newsletterSchema>;
+
 
 function SocialIcon({ children, href }: { children: React.ReactNode; href: string }) {
   return (
@@ -15,6 +29,40 @@ function SocialIcon({ children, href }: { children: React.ReactNode; href: strin
 
 
 export function Footer() {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const form = useForm<NewsletterFormValues>({
+    resolver: zodResolver(newsletterSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const onSubmit = async (data: NewsletterFormValues) => {
+    if (!firestore) {
+      toast({
+        title: "Error",
+        description: "Could not connect to the database. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    };
+    
+    const subscribersCollection = collection(firestore, 'newsletter_subscribers');
+    
+    addDocumentNonBlocking(subscribersCollection, {
+      email: data.email,
+      createdAt: serverTimestamp(),
+    });
+
+    toast({
+      title: "Subscription Successful!",
+      description: "Thank you for subscribing to our newsletter.",
+    });
+    form.reset();
+  };
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -81,10 +129,23 @@ export function Footer() {
             <p className="text-sm mb-4">
               Subscribe to our newsletter and get 30% off your first purchase.
             </p>
-            <form className="flex items-center">
-              <Input type="email" placeholder="Your Email Address" className="bg-card border-border text-card-foreground rounded-r-none focus:ring-primary focus:border-primary placeholder:text-muted-foreground" />
-              <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none shrink-0">Sign Up</Button>
-            </form>
+             <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
+                    <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem className="flex-1">
+                        <FormControl>
+                            <Input type="email" placeholder="Your Email Address" className="bg-card border-border text-card-foreground rounded-r-none focus:ring-primary focus:border-primary placeholder:text-muted-foreground h-10" {...field} />
+                        </FormControl>
+                        <FormMessage className="text-destructive-foreground/80 text-xs" />
+                        </FormItem>
+                    )}
+                    />
+                    <Button type="submit" disabled={form.formState.isSubmitting} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none shrink-0 h-10">Sign Up</Button>
+                </form>
+            </Form>
             <h3 className="font-headline text-lg font-semibold text-card-foreground mt-6 mb-4">FOLLOW US</h3>
             <div className="flex space-x-2">
                 <SocialIcon href="#"><Twitter className="h-5 w-5" /></SocialIcon>

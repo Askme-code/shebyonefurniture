@@ -133,5 +133,22 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if false;
     }
+
+    /**
+     * @description Publicly-writable collection for newsletter sign-ups.
+     * @path /newsletter_subscribers/{subscriberId}
+     * @allow (create) for any user to sign up for the newsletter. Validates email format.
+     * @allow (read, list, update, delete) only for admins.
+     * @principle Allow public write for sign-ups but restrict read access to protect user data.
+     */
+    match /newsletter_subscribers/{subscriberId} {
+      function isValidSubscription() {
+        let email = request.resource.data.email;
+        return email is string && email.matches('^[^@]+@[^@]+\\.[^@]+$') && request.resource.data.keys().hasAll(['email', 'createdAt']);
+      }
+
+      allow create: if isValidSubscription();
+      allow read, list, update, delete: if isAdmin();
+    }
   }
 }
