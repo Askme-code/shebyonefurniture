@@ -28,28 +28,37 @@ import { OrderProvider } from '@/context/OrderProvider';
 import { useAdmin } from '@/hooks/use-admin';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAdmin, isLoading } = useAdmin();
+  const { user, isAdmin, isLoading } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Allow access to the login page
-    if (pathname === '/admin/login') {
-        return;
+    if (pathname === '/admin/login' || isLoading) {
+      return; // Do nothing if on login page or still loading
     }
 
-    // If the user check is complete and they are not an admin,
-    // redirect them to the admin login page.
-    if (!isLoading && !isAdmin) {
+    // After loading is complete...
+    if (!user) {
+      // If not logged in, redirect to admin login
       router.push('/admin/login');
+    } else if (!isAdmin) {
+      // If logged in but NOT an admin, show a toast and redirect to user account page
+      toast({
+        title: 'Access Denied',
+        description: 'You do not have permission to access the admin dashboard.',
+        variant: 'destructive',
+      });
+      router.push('/account');
     }
-  }, [isAdmin, isLoading, router, pathname]);
+  }, [user, isAdmin, isLoading, router, pathname, toast]);
 
   // Don't render the admin dashboard layout around the login page itself.
   if (pathname === '/admin/login') {
