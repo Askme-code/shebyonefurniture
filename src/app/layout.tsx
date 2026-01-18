@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/context/CartProvider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
+import { ProductProvider } from '@/context/ProductProvider';
 
 export const metadata: Metadata = {
   title: 'Sheby One Furniture',
@@ -24,10 +25,12 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <CartProvider>
-            {children}
-            <Toaster />
-          </CartProvider>
+          <ProductProvider>
+            <CartProvider>
+              {children}
+              <Toaster />
+            </CartProvider>
+          </ProductProvider>
         </FirebaseClientProvider>
         <div className="gtranslate_wrapper"></div>
         <Script id="gtranslate-settings" strategy="afterInteractive">

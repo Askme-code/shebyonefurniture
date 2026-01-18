@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getPersonalizedRecommendations } from '@/ai/flows/personalized-recommendations';
-import { getProductById, getProducts } from '@/lib/data';
+import { useProducts } from '@/hooks/use-products';
 import type { Product } from '@/lib/types';
 import { ProductCard } from './ProductCard';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -11,8 +11,9 @@ const VIEWED_PRODUCTS_KEY = 'viewedProductIds';
 
 export function Recommendations({ currentProductId }: { currentProductId: string }) {
   const [recommendations, setRecommendations] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(true);
   const { items: cartItems } = useCart();
+  const { getProductById, products, isLoading: isLoadingProducts } = useProducts();
 
   useEffect(() => {
     // Add current product to viewed history in localStorage
@@ -25,7 +26,9 @@ export function Recommendations({ currentProductId }: { currentProductId: string
 
   useEffect(() => {
     const fetchRecommendations = async () => {
-      setIsLoading(true);
+      if (isLoadingProducts) return;
+
+      setIsLoadingRecommendations(true);
       try {
         const viewedProductIds: string[] = JSON.parse(localStorage.getItem(VIEWED_PRODUCTS_KEY) || '[]');
         const cartProductIds = cartItems.map(item => item.product.id);
@@ -37,22 +40,21 @@ export function Recommendations({ currentProductId }: { currentProductId: string
 
         const recommendedProducts = recommendedIds
           .map(id => getProductById(id))
-          .filter((p): p is Product => p !== undefined); // Type guard to filter out undefined
+          .filter((p): p is Product => p !== undefined);
 
         setRecommendations(recommendedProducts);
       } catch (error) {
         console.error("Failed to fetch recommendations:", error);
-        // Fallback to generic featured items
-        setRecommendations(getProducts().filter(p => p.isFeatured && p.id !== currentProductId).slice(0, 5));
+        setRecommendations(products.filter(p => p.isFeatured && p.id !== currentProductId).slice(0, 5));
       } finally {
-        setIsLoading(false);
+        setIsLoadingRecommendations(false);
       }
     };
 
     fetchRecommendations();
-  }, [currentProductId, cartItems]);
+  }, [currentProductId, cartItems, getProductById, products, isLoadingProducts]);
 
-  if (isLoading) {
+  if (isLoadingRecommendations || isLoadingProducts) {
     return (
         <section className="py-16 sm:py-24 bg-card">
             <div className="container mx-auto px-4">

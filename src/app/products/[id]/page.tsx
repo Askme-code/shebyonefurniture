@@ -1,28 +1,31 @@
-import { notFound } from 'next/navigation';
-import { getProductById, getProducts } from '@/lib/data';
+'use client';
+
+import { useParams, notFound } from 'next/navigation';
+import { useProducts } from '@/hooks/use-products';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProductImageGallery } from '@/components/products/ProductImageGallery';
 import { AddToCart } from '@/components/cart/AddToCart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Package } from 'lucide-react';
+import { CheckCircle, Package, Loader2 } from 'lucide-react';
 import { Recommendations } from '@/components/products/Recommendations';
 
-type ProductPageProps = {
-  params: {
-    id: string;
-  };
-};
+export default function ProductPage() {
+  const params = useParams();
+  const { getProductById, isLoading } = useProducts();
+  const product = getProductById(params.id as string);
 
-export async function generateStaticParams() {
-  const products = getProducts();
-  return products.map((product) => ({
-    id: product.id,
-  }));
-}
-
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = getProductById(params.id);
+  if (isLoading) {
+      return (
+        <AppLayout>
+            <div className="container mx-auto px-4 py-8 md:py-12">
+                <div className="flex h-96 w-full items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            </div>
+        </AppLayout>
+      );
+  }
 
   if (!product) {
     notFound();

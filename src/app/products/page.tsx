@@ -1,25 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProductCard } from '@/components/products/ProductCard';
-import { getProducts, getCategories } from '@/lib/data';
-import type { Product } from '@/lib/types';
+import { getCategories } from '@/lib/data';
+import { useProducts } from '@/hooks/use-products';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { ListFilter } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductsPage() {
-  const allProducts = getProducts();
+  const { products: allProducts, isLoading } = useProducts();
   const allCategories = [{ id: 'all', name: 'All' }, ...getCategories()];
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const maxPrice = Math.max(...allProducts.map(p => p.price), 5000000);
+
+  const maxPrice = useMemo(() => {
+    if (allProducts.length === 0) return 5000000;
+    return Math.max(...allProducts.map(p => p.price));
+  }, [allProducts]);
+
   const [priceRange, setPriceRange] = useState([0, maxPrice]);
+
+  useEffect(() => {
+      setPriceRange([0, maxPrice]);
+  }, [maxPrice]);
+
 
   const filteredProducts = allProducts.filter((product) => {
     const matchesCategory =
@@ -31,6 +42,31 @@ export default function ProductsPage() {
 
     return matchesCategory && matchesSearch && matchesPrice;
   });
+
+  const mainContent = isLoading ? (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+             <div key={i} className="space-y-2">
+                 <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                 <Skeleton className="h-6 w-3/4" />
+                 <Skeleton className="h-8 w-1/2" />
+             </div>
+        ))}
+    </div>
+  ) : (
+    filteredProducts.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+        ))}
+        </div>
+    ) : (
+        <div className="flex flex-col items-center justify-center h-full text-center py-16">
+            <h2 className="text-2xl font-headline">No Products Found</h2>
+            <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>
+        </div>
+    )
+  );
 
   return (
     <AppLayout>
@@ -103,18 +139,7 @@ export default function ProductsPage() {
 
           {/* Products Grid */}
           <main className="md:col-span-3">
-            {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                ))}
-                </div>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center py-16">
-                    <h2 className="text-2xl font-headline">No Products Found</h2>
-                    <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>
-                </div>
-            )}
+            {mainContent}
           </main>
         </div>
       </div>
