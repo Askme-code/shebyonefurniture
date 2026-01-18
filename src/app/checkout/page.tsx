@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
+import { useEffect } from 'react';
 
 const checkoutSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -38,6 +39,14 @@ export default function CheckoutPage() {
         address: "",
     },
   });
+
+  useEffect(() => {
+    // This effect handles redirecting the user if they land on this page
+    // with an empty cart. It runs after the component renders to avoid errors.
+    if (items.length === 0) {
+      router.push('/cart');
+    }
+  }, [items, router]);
 
   const onSubmit = (data: CheckoutFormValues) => {
     if (!user || !firestore) {
@@ -78,8 +87,9 @@ export default function CheckoutPage() {
     router.push('/');
   };
   
-  if (items.length === 0 && typeof window !== 'undefined') {
-    router.push('/cart');
+  if (items.length === 0) {
+    // Don't render the checkout form if the cart is empty.
+    // This prevents a flash of content before the useEffect redirect kicks in.
     return null;
   }
 
