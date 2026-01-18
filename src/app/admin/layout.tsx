@@ -26,7 +26,7 @@ import {
 import { ProductProvider } from '@/context/ProductProvider';
 import { OrderProvider } from '@/context/OrderProvider';
 import { useAdmin } from '@/hooks/use-admin';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AdminLayout({
@@ -36,17 +36,28 @@ export default function AdminLayout({
 }) {
   const { isAdmin, isLoading } = useAdmin();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // If the user check is complete and they are not an admin (i.e., not logged in),
-    // redirect them to the home page.
-    if (!isLoading && !isAdmin) {
-      router.push('/');
+    // Allow access to the login page
+    if (pathname === '/admin/login') {
+        return;
     }
-  }, [isAdmin, isLoading, router]);
 
-  // While checking for admin status, show a loading indicator.
-  // Or if we are about to redirect, show loading to prevent flashing content.
+    // If the user check is complete and they are not an admin,
+    // redirect them to the admin login page.
+    if (!isLoading && !isAdmin) {
+      router.push('/admin/login');
+    }
+  }, [isAdmin, isLoading, router, pathname]);
+
+  // Don't render the admin dashboard layout around the login page itself.
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+
+  // While checking for admin status, or if we are about to redirect, show a loading indicator.
   if (isLoading || !isAdmin) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -55,16 +66,12 @@ export default function AdminLayout({
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             <span>Verifying Access...</span>
           </div>
-          <p className="text-muted-foreground">
-            You need to be an administrator to access this page.
-          </p>
-          <Button variant="outline" onClick={() => router.push('/')}>Go to Homepage</Button>
         </div>
       </div>
     );
   }
 
-  // If the user is an admin, render the layout.
+  // If the user is an admin, render the full admin layout.
   return (
     <ProductProvider>
       <OrderProvider>
