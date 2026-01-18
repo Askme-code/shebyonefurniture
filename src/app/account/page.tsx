@@ -28,8 +28,7 @@ export default function AccountPage() {
     const userOrdersQuery = useMemoFirebase(
         () => (firestore && user ? query(
             collection(firestore, 'orders'),
-            where('userId', '==', user.uid),
-            orderBy('createdAt', 'desc')
+            where('userId', '==', user.uid)
         ) : null),
         [firestore, user]
     );
@@ -41,7 +40,7 @@ export default function AccountPage() {
         return rawOrders.map(o => ({
             ...o,
             createdAt: o.createdAt?.toDate() ?? new Date(),
-        }));
+        })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     }, [rawOrders]);
 
     if (isUserLoading || areOrdersLoading) {
