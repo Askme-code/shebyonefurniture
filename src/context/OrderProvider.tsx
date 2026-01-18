@@ -3,6 +3,7 @@ import { createContext, ReactNode, useMemo } from 'react';
 import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Order } from '@/lib/types';
+import { useAdmin } from '@/hooks/use-admin';
 
 type OrderWithDate = Omit<Order, 'createdAt'> & { createdAt: Date };
 
@@ -16,11 +17,17 @@ export const OrderContext = createContext<{
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  // Query the top-level 'orders' collection. This is now allowed for admins.
+  // Query only if user is a confirmed admin.
   const ordersQuery = useMemoFirebase(
-    () => (firestore ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc')) : null),
-    [firestore]
+    () => {
+      if (firestore && isAdmin) {
+        return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
+      }
+      return null;
+    },
+    [firestore, isAdmin]
   );
 
   const { data: rawOrders, isLoading: areOrdersLoading } = useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(ordersQuery);
@@ -33,7 +40,8 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawOrders]);
   
-  const isLoading = areOrdersLoading;
+  // Overall loading is true if we're checking admin status OR fetching orders.
+  const isLoading = isAdminLoading || (isAdmin && areOrdersLoading);
 
   const contextValue = useMemo(() => ({
     orders,
