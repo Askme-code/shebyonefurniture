@@ -1,7 +1,7 @@
 'use client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
