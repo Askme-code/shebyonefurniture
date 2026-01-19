@@ -7,6 +7,7 @@ import { FeaturedProducts } from '@/components/products/FeaturedProducts';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ArrowRight } from 'lucide-react';
 import { OurServices } from '@/components/layout/OurServices';
+import { ProductGallery } from '@/components/layout/ProductGallery';
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'hero-1');
 
@@ -50,8 +51,11 @@ export default function Home() {
         {/* Our Services Section */}
         <OurServices />
 
+        {/* Product Gallery Section */}
+        <ProductGallery />
+
         {/* Promotion Section */}
-        <section className="py-16 sm:py-24 bg-card">
+        <section className="py-16 sm:py-24 bg-background">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-headline tracking-tight sm:text-4xl mb-4">Custom Furniture, Uniquely Yours</h2>
             <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
