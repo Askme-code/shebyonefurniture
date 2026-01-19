@@ -14,6 +14,7 @@ import {
   Settings,
   PanelLeft,
   Mail,
+  Palmtree,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -55,17 +56,25 @@ export default function AdminLayout({
 
   useEffect(() => {
     // This effect handles redirection after the loading state is resolved.
-    if (!isLoading && !isAdmin && pathname !== '/admin/login') {
-       if (user) { // A non-admin user is logged in
-         toast({
-           title: 'Access Denied',
-           description: 'You do not have permission to access the admin dashboard.',
-           variant: 'destructive',
-         });
-         router.push('/account');
-       } else { // No user is logged in
-         router.push('/admin/login');
-       }
+    if (!isLoading) {
+      if (pathname === '/admin/login') {
+        if (isAdmin) {
+          router.push('/admin');
+        }
+      } else {
+        if (!isAdmin) {
+          if (user) {
+            toast({
+              title: 'Access Denied',
+              description: 'You do not have permission to access the admin dashboard.',
+              variant: 'destructive',
+            });
+            router.push('/account');
+          } else {
+            router.push('/admin/login');
+          }
+        }
+      }
     }
   }, [user, isAdmin, isLoading, router, pathname, toast]);
 
@@ -76,8 +85,14 @@ export default function AdminLayout({
 
   // While checking for admin status, show a loading indicator.
   // This prevents the admin dashboard from ever rendering for a non-admin.
-  if (isLoading || !isAdmin) {
+  if (isLoading) {
     return <AdminLoadingScreen message="Verifying Access..." />;
+  }
+
+  // If we reach this point, but the user is still not an admin for any reason,
+  // we render nothing to prevent a flash of the admin UI.
+  if (!isAdmin) {
+    return null;
   }
 
   // If we reach this point, the user is a confirmed admin.
@@ -91,7 +106,7 @@ export default function AdminLayout({
                 href="/"
                 className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
               >
-                <Logo />
+                <Palmtree className="h-5 w-5" />
                 <span className="sr-only">Sheby One Furniture</span>
               </Link>
               <Tooltip>
@@ -233,7 +248,7 @@ export default function AdminLayout({
                       href="/"
                       className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                     >
-                      <Logo />
+                      <Palmtree className="h-6 w-6" />
                       <span className="sr-only">Sheby One Furniture</span>
                     </Link>
                     <Link
