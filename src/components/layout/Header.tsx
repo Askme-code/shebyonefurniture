@@ -37,6 +37,7 @@ export function Header() {
   const router = useRouter();
 
   const handleLogout = () => {
+    if (!auth) return;
     signOut(auth);
     router.push('/');
   };
@@ -55,6 +56,7 @@ export function Header() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <Logo />
+            <span className="font-headline font-bold text-xl whitespace-nowrap">Sheby One Furniture</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/products" className="transition-colors hover:text-primary">
