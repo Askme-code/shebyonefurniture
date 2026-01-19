@@ -5,9 +5,9 @@ export function Logo() {
     <Image
       src="/image/sheby-logo.png"
       alt="Sheby One Furniture"
-      width={150}
-      height={35}
-      className="object-contain dark:invert"
+      width={50}
+      height={50}
+      className="object-contain"
     />
   );
 }
