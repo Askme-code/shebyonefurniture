@@ -3,14 +3,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 const galleryImages = [
-    { src: '/image/furniture1.jpg', alt: 'Modern wooden chair' },
+    { src: '/image/modern-wooden-chair2.jpg', alt: 'Modern wooden chair' },
     { src: '/image/sofa-bed.jpeg', alt: 'Comfortable sofa bed' },
     { src: '/image/office-set-furniture.jpg', alt: 'Complete office furniture set' },
     { src: '/image/bed-sofa.jpeg', alt: 'Stylish bed and sofa combination' },
     { src: '/image/for-office.jpg', alt: 'Minimalist office desk' },
     { src: '/image/shelf.jpeg', alt: 'Wooden display shelf' },
-    { src: '/image/furniture2.jpg', alt: 'Elegant dining chair' },
-    { src: '/image/tv-showcase-table.jpeg', alt: 'Modern TV showcase table' },
+    { src: '/image/elegant-dining-chair.jpg', alt: 'Elegant dining chair' },
+    { src: '/image/modern-tv-showcase.jpg', alt: 'Modern TV showcase table' },
     { src: '/image/sofa_coach.jpeg', alt: 'Plush sofa coach' },
     { src: '/image/office-furniture.jpg', alt: 'Ergonomic office chair' },
     { src: '/image/raw-timber.jpg', alt: 'Stack of raw timber' },
