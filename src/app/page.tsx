@@ -6,6 +6,7 @@ import { CategoryShowcase } from '@/components/products/CategoryShowcase';
 import { FeaturedProducts } from '@/components/products/FeaturedProducts';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ArrowRight } from 'lucide-react';
+import { OurServices } from '@/components/layout/OurServices';
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'hero-1');
 
@@ -45,6 +46,9 @@ export default function Home() {
 
         {/* Featured Products Section */}
         <FeaturedProducts />
+
+        {/* Our Services Section */}
+        <OurServices />
 
         {/* Promotion Section */}
         <section className="py-16 sm:py-24 bg-card">
