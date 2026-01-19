@@ -29,23 +29,26 @@ export default function CartPage() {
           <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
             <div className="md:col-span-2 space-y-4">
               {items.map(({ product, quantity }) => (
-                <Card key={product.id} className="flex items-center p-4">
-                  <div className="relative w-24 h-24 rounded-md overflow-hidden">
-                    <Image
-                      src={product.images[0].url}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      data-ai-hint={product.images[0].hint}
-                    />
+                <Card key={product.id} className="flex flex-wrap items-center justify-between gap-y-4 p-4">
+                  <div className="flex items-center">
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-md overflow-hidden flex-shrink-0">
+                      <Image
+                        src={product.images[0].url}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        data-ai-hint={product.images[0].hint}
+                      />
+                    </div>
+                    <div className="flex-grow ml-4">
+                      <Link href={`/products/${product.id}`} className="font-semibold hover:text-primary">{product.name}</Link>
+                      <p className="text-sm text-muted-foreground">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-grow ml-4">
-                    <Link href={`/products/${product.id}`} className="font-semibold hover:text-primary">{product.name}</Link>
-                    <p className="text-sm text-muted-foreground">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  
+                  <div className="flex items-center gap-4">
                      <div className="flex items-center border rounded-md">
                         <Button variant="ghost" size="icon" onClick={() => updateQuantity(product.id, quantity - 1)} className="h-9 w-9">
                           <Minus className="h-4 w-4" />
