@@ -1,6 +1,5 @@
 'use client';
 
-import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
 import {
   Home,
@@ -14,7 +13,6 @@ import {
   Settings,
   PanelLeft,
   Mail,
-  Palmtree,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -24,12 +22,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ProductProvider } from '@/context/ProductProvider';
 import { OrderProvider } from '@/context/OrderProvider';
 import { useAdmin } from '@/hooks/use-admin';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 function AdminLoadingScreen({ message }: { message: string }) {
   return (
@@ -106,7 +104,13 @@ export default function AdminLayout({
                 href="/"
                 className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
               >
-                <Palmtree className="h-5 w-5" />
+                <Image
+                  src="/image/sheby-logo.png"
+                  alt="Sheby One Furniture"
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
                 <span className="sr-only">Sheby One Furniture</span>
               </Link>
               <Tooltip>
@@ -248,7 +252,13 @@ export default function AdminLayout({
                       href="/"
                       className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                     >
-                      <Palmtree className="h-6 w-6" />
+                      <Image
+                        src="/image/sheby-logo.png"
+                        alt="Sheby One Furniture"
+                        width={24}
+                        height={24}
+                        className="object-contain"
+                      />
                       <span className="sr-only">Sheby One Furniture</span>
                     </Link>
                     <Link
