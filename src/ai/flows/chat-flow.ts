@@ -56,11 +56,7 @@ Available categories: ${categoryList}.
 
 Current conversation:
 {{#each history}}
-  {{#if (eq role 'user')}}
-    User: {{{content}}}
-  {{else}}
-    You: {{{content}}}
-  {{/if}}
+  {{role}}: {{{content}}}
 {{/each}}
 
 New user message: {{{message}}}
