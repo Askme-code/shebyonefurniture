@@ -45,6 +45,6 @@ const reportInsightsFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    return output || "AI insights could not be generated at this time. Please try again later.";
   }
 );
