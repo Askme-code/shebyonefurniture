@@ -9,7 +9,12 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+  useUser,
+} from '@/firebase';
 import type { Order } from '@/lib/types';
 import { useAdmin } from '@/hooks/use-admin';
 
@@ -28,37 +33,33 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  // 🔐 ADMIN QUERY (all orders)
-  const adminOrdersQuery = useMemoFirebase(
-    () =>
-      isAdmin && firestore
-        ? query(
-            collection(firestore, 'orders'),
-            orderBy('createdAt', 'desc')
-          )
-        : null,
-    [isAdmin, firestore]
-  );
+  // ⛔ HARD STOP: do nothing until auth + admin state resolved
+  const canQuery = !!firestore && !isAuthLoading && !isAdminLoading;
 
-  // 👤 USER QUERY (only their orders)
-  const userOrdersQuery = useMemoFirebase(
-    () =>
-      !isAdmin && user && firestore
-        ? query(
-            collection(firestore, 'orders'),
-            where('userId', '==', user.uid),
-            orderBy('createdAt', 'desc')
-          )
-        : null,
-    [isAdmin, user, firestore]
-  );
+  const queryRef = useMemoFirebase(() => {
+    if (!canQuery) return null;
 
-  // Select correct query
-  const activeQuery = isAdmin ? adminOrdersQuery : userOrdersQuery;
+    if (isAdmin) {
+      return query(
+        collection(firestore, 'orders'),
+        orderBy('createdAt', 'desc')
+      );
+    }
+    
+    if (user) {
+        return query(
+          collection(firestore, 'orders'),
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+    }
+
+    return null; // Return null if not admin and no user (e.g., logged out)
+  }, [canQuery, isAdmin, firestore, user]);
 
   const { data: rawOrders, isLoading: isOrdersLoading } =
     useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(
-      activeQuery
+      queryRef
     );
 
   const orders = useMemo(() => {
@@ -69,8 +70,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawOrders]);
 
-  const isLoading =
-    isAuthLoading || isAdminLoading || isOrdersLoading;
+  const isLoading = isAuthLoading || isAdminLoading || isOrdersLoading;
 
   return (
     <OrderContext.Provider
