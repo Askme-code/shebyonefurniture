@@ -1,7 +1,15 @@
 'use client';
+
 import { createContext, ReactNode, useMemo } from 'react';
-import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import {
+  collection,
+  query,
+  orderBy,
+  where,
+  Timestamp,
+} from 'firebase/firestore';
+
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import type { Order } from '@/lib/types';
 import { useAdmin } from '@/hooks/use-admin';
 
@@ -16,23 +24,42 @@ export const OrderContext = createContext<{
 });
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
-  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
   const firestore = useFirestore();
+  const { user, isUserLoading: isAuthLoading } = useUser();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  // Conditionally build the query. It will be null if the user is not an admin
-  // or if Firestore is not yet available. This is the core of the fix.
+  // 🔐 ADMIN QUERY (all orders)
   const adminOrdersQuery = useMemoFirebase(
     () =>
       isAdmin && firestore
-        ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'))
+        ? query(
+            collection(firestore, 'orders'),
+            orderBy('createdAt', 'desc')
+          )
         : null,
     [isAdmin, firestore]
   );
 
-  // The useCollection hook safely handles a null query by not fetching data.
-  const { data: rawOrders, isLoading: isOrdersLoading } = useCollection<
-    Omit<Order, 'createdAt'> & { createdAt: Timestamp }
-  >(adminOrdersQuery);
+  // 👤 USER QUERY (only their orders)
+  const userOrdersQuery = useMemoFirebase(
+    () =>
+      !isAdmin && user && firestore
+        ? query(
+            collection(firestore, 'orders'),
+            where('userId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+          )
+        : null,
+    [isAdmin, user, firestore]
+  );
+
+  // Select correct query
+  const activeQuery = isAdmin ? adminOrdersQuery : userOrdersQuery;
+
+  const { data: rawOrders, isLoading: isOrdersLoading } =
+    useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(
+      activeQuery
+    );
 
   const orders = useMemo(() => {
     if (!rawOrders) return [];
@@ -42,21 +69,16 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawOrders]);
 
-  // The overall loading state is true if we're checking for admin status,
-  // or if we are an admin and the orders are still loading.
-  const isLoading = isAdminLoading || (isAdmin && isOrdersLoading);
-
-  const contextValue = useMemo(
-    () => ({
-      // Only provide the orders list if the user is a confirmed admin.
-      orders: isAdmin ? orders : [],
-      isLoading: isLoading,
-    }),
-    [orders, isLoading, isAdmin]
-  );
+  const isLoading =
+    isAuthLoading || isAdminLoading || isOrdersLoading;
 
   return (
-    <OrderContext.Provider value={contextValue}>
+    <OrderContext.Provider
+      value={{
+        orders,
+        isLoading,
+      }}
+    >
       {children}
     </OrderContext.Provider>
   );
