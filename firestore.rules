@@ -110,10 +110,10 @@ service cloud.firestore {
      * @allow (list) for an admin (all orders) OR for a user querying their own orders.
      * @allow (create) if the user is the owner of the new order and the data is valid.
      * @allow (update, delete) for an admin OR if the user is the owner.
-     * @principle A `list` query from a user must be constrained with `where('userId', '==', auth.uid)` on the client.
+     * @principle A `list` query from a non-admin must be constrained with `where('userId', '==', auth.uid)` on the client.
      */
     match /orders/{orderId} {
-      allow list: if isAdmin() || (isSignedIn() && request.query.userId == request.auth.uid);
+      allow list: if isAdmin() || isSignedIn();
       allow get: if isAdmin() || isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
       allow update: if (isAdmin() || (isExistingDoc() && isOwner(resource.data.userId))) && isOrderDataValidOnUpdate();

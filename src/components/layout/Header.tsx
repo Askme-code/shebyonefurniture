@@ -111,10 +111,10 @@ export function Header() {
                   ) : (
                     <DropdownMenuItem onClick={() => router.push('/account')}>
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <span>My Account</span>
+                        <span>My Dashboard</span>
                     </DropdownMenuItem>
                   )}
-                   <DropdownMenuItem onClick={() => router.push('/account')}>
+                   <DropdownMenuItem onClick={() => router.push('/account/profile')}>
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>

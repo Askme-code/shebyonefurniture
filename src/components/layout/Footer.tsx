@@ -128,10 +128,10 @@ export function Footer() {
           <div>
             <h3 className="font-headline text-lg font-semibold text-card-foreground mb-4">MY ACCOUNT</h3>
             <ul className="space-y-2 text-sm">
-                <li><Link href="/admin" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Dashboard</Link></li>
-                <li><Link href="/admin/orders" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Orders</Link></li>
-                <li><Link href="#" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Wishlist</Link></li>
-                <li><Link href="#" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Profile</Link></li>
+                <li><Link href="/account" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Dashboard</Link></li>
+                <li><Link href="/account/orders" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Orders</Link></li>
+                <li><Link href="/account/wishlist" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Wishlist</Link></li>
+                <li><Link href="/account/profile" className="hover:text-primary transition-colors flex items-center gap-2"><ChevronRight className="h-4 w-4 text-primary" /> My Profile</Link></li>
             </ul>
           </div>
 
