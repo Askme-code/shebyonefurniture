@@ -8,15 +8,14 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-
 import {
   useFirestore,
   useCollection,
   useMemoFirebase,
   useUser,
 } from '@/firebase';
-import type { Order } from '@/lib/types';
 import { useAdmin } from '@/hooks/use-admin';
+import type { Order } from '@/lib/types';
 
 type OrderWithDate = Omit<Order, 'createdAt'> & { createdAt: Date };
 
@@ -34,36 +33,36 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   const queryRef = useMemoFirebase(() => {
-    // We absolutely cannot form a query until we know the user's status.
-    if (isAuthLoading || isAdminLoading || !firestore) {
-      return null;
-    }
+    if (isAuthLoading || isAdminLoading || !firestore) return null;
 
-    // At this point, loading is done. Now check role.
     if (isAdmin && user) {
-      // User is confirmed admin, create admin query for all orders.
       return query(
         collection(firestore, 'orders'),
         orderBy('createdAt', 'desc')
       );
     } else if (user) {
-      // User is confirmed non-admin, create a user-specific query.
       return query(
         collection(firestore, 'orders'),
         where('userId', '==', user.uid),
         orderBy('createdAt', 'desc')
       );
     }
-    
-    // No user logged in.
-    return null;
 
+    return null;
   }, [user, isAdmin, isAuthLoading, isAdminLoading, firestore]);
 
-  const { data: rawOrders, isLoading: isOrdersLoading } =
-    useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(
-      queryRef
-    );
+  // 🔐 Only call useCollection if queryRef exists
+  let rawOrders: (Omit<Order, 'createdAt'> & { createdAt: Timestamp })[] | null =
+    null;
+  let isOrdersLoading = true;
+
+  if (queryRef) {
+    const result = useCollection<
+      Omit<Order, 'createdAt'> & { createdAt: Timestamp }
+    >(queryRef);
+    rawOrders = result.data;
+    isOrdersLoading = result.isLoading;
+  }
 
   const orders = useMemo(() => {
     if (!rawOrders) return [];
@@ -73,17 +72,10 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawOrders]);
 
-  // The overall loading state is true if auth/admin checks are running, 
-  // OR if they are done and a valid query is still loading from the collection.
-  const isLoading = (isAuthLoading || isAdminLoading) || (queryRef !== null && isOrdersLoading);
+  const isLoading = isAuthLoading || isAdminLoading || isOrdersLoading;
 
   return (
-    <OrderContext.Provider
-      value={{
-        orders,
-        isLoading,
-      }}
-    >
+    <OrderContext.Provider value={{ orders, isLoading }}>
       {children}
     </OrderContext.Provider>
   );
