@@ -19,17 +19,17 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  // Only run the query if the user is a confirmed admin.
+  // Only run the query if the user is a confirmed admin and the check is complete.
   // This provider is only used within the AdminLayout, which should already
   // protect it, but this serves as a critical secondary guard against race conditions.
   const ordersQuery = useMemoFirebase(
     () => {
-      if (firestore && isAdmin) {
+      if (firestore && !isAdminLoading && isAdmin) {
         return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
       }
-      return null; // If not an admin, the query is null, and useCollection will not run.
+      return null; // If not an admin or still loading, the query is null.
     },
-    [firestore, isAdmin]
+    [firestore, isAdmin, isAdminLoading]
   );
 
   const { data: rawOrders, isLoading: areOrdersLoading } = useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(ordersQuery);
