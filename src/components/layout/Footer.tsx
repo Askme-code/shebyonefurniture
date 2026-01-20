@@ -151,7 +151,7 @@ export function Footer() {
                 <SocialIcon href="#"><Twitter className="h-5 w-5" /></SocialIcon>
                 <SocialIcon href="#"><Facebook className="h-5 w-5" /></SocialIcon>
                 <SocialIcon href="#"><Linkedin className="h-5 w-5" /></SocialIcon>
-                <SocialIcon href="#"><Instagram className="h-5 w-5" /></SocialIcon>
+                <SocialIcon href="https://www.instagram.com/aymanfuniture?igsh=MWJ1dDNmZHI5ZXMydQ=="><Instagram className="h-5 w-5" /></SocialIcon>
             </div>
           </div>
         </div>
