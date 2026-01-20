@@ -160,6 +160,42 @@
         "email",
         "createdAt"
       ]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a message sent from the contact form.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the person sending the message."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email of the sender."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the message was sent."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates if the message has been read by an admin."
+        }
+      },
+      "required": [
+        "name",
+        "email",
+        "message",
+        "createdAt",
+        "isRead"
+      ]
     }
   },
   "auth": {
@@ -231,6 +267,22 @@
             {
               "name": "subscriberId",
               "description": "Unique identifier for the subscription."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores messages submitted through the contact form. Publicly writable for submissions, admin-only for management.",
+          "params": [
+            {
+              "name": "messageId",
+              "description": "Unique identifier for the message."
             }
           ]
         }

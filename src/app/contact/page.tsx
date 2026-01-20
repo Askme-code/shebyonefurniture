@@ -1,3 +1,4 @@
+
 'use client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
+import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 const contactSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -21,6 +24,7 @@ type ContactFormValues = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -32,7 +36,22 @@ export default function ContactPage() {
   });
 
   const onSubmit = (data: ContactFormValues) => {
-    console.log("Contact Form Submitted:", data);
+     if (!firestore) {
+      toast({
+        title: "Error",
+        description: "Could not submit message. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const messagesCollection = collection(firestore, 'messages');
+    addDocumentNonBlocking(messagesCollection, {
+      ...data,
+      createdAt: serverTimestamp(),
+      isRead: false,
+    });
+
     toast({
       title: "Message Sent!",
       description: "Thank you for contacting us. We will get back to you shortly.",
@@ -127,7 +146,7 @@ export default function ContactPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" size="lg" className="w-full">
+                    <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
                       <Send className="mr-2 h-5 w-5" />
                       Send Message
                     </Button>

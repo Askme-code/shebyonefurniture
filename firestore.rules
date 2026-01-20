@@ -9,6 +9,7 @@
  * - /orders/{orderId}: A top-level collection of all orders. Orders contain a `userId` field to link them to their owner.
  * - /roles_admin/{userId}: A lookup collection to identify administrators. The existence of a
  *   document here grants a user admin privileges across the entire database.
+ * - /messages/{messageId}: A collection for contact form submissions. Publicly writable, admin-only readable.
  *
  * Key Security Decisions:
  * - Admin Role Management: Administrator privileges are granted if a document exists for the user
@@ -151,6 +152,27 @@ service cloud.firestore {
 
       allow create: if isValidSubscription();
       allow read, list, update, delete: if isAdmin();
+    }
+    
+    /**
+     * @description Controls messages sent from the contact form.
+     * @path /messages/{messageId}
+     * @allow (create) for any user, validating the message structure.
+     * @allow (get, list, update, delete) only for admins to manage messages.
+     * @principle Allows public submission while securing message content for admin review.
+     */
+    match /messages/{messageId} {
+      function isValidMessage() {
+        let data = request.resource.data;
+        return data.keys().hasAll(['name', 'email', 'message', 'createdAt', 'isRead'])
+          && data.name is string && data.name.size() > 0
+          && data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$')
+          && data.message is string && data.message.size() > 0
+          && data.isRead == false; // New messages must be unread
+      }
+
+      allow create: if isValidMessage();
+      allow get, list, update, delete: if isAdmin();
     }
   }
 }
