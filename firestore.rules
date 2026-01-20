@@ -106,16 +106,14 @@ service cloud.firestore {
     /**
      * @description Controls access to the top-level orders collection.
      * @path /orders/{orderId}
-     * @allow (get) for an admin OR if the user is the owner of the specific order document.
-     * @allow (list) for admins ONLY, to allow them to query the entire collection.
-     * @allow (create) if the user is the owner of the new order and the data is valid.
-     * @allow (update, delete) for an admin.
-     * @principle Separating `get` and `list` prevents non-admins from listing all orders, which caused the error. Client-side queries for non-admins MUST use a `where('userId', '==', auth.uid)` clause.
+     * @allow (create) for an authenticated user to create their own order.
+     * @allow (read) if the user is an admin OR if they are the owner of the document. This is the key rule that allows filtered queries for users and full list access for admins without error.
+     * @allow (update, delete) only for admins.
+     * @principle A single, document-level `read` rule correctly handles both direct `get` requests and `list` (query) operations.
      */
     match /orders/{orderId} {
       allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
-      allow get: if isAdmin() || isOwner(resource.data.userId);
-      allow list: if isAdmin();
+      allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
