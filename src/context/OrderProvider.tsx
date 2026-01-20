@@ -33,8 +33,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  // This flag determines if we are ready to create a query. It ensures all
-  // authentication and admin checks are complete before proceeding.
+  // This flag is the master gate: we can only query if auth and admin checks are done, and we have a user.
   const canQuery = !!firestore && !isAuthLoading && !isAdminLoading && !!user;
 
   const queryRef = useMemoFirebase(() => {
@@ -56,10 +55,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         );
   }, [canQuery, isAdmin, firestore, user]);
 
-  // The useCollection hook is called unconditionally as required by React,
-  // but it is designed to handle a null queryRef and will not fetch data
-  // until the query is valid.
-  const { data: rawOrders, isLoading: isOrdersLoading } =
+  const { data: rawOrders, isLoading: isOrdersLoadingFromHook } =
     useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(
       queryRef
     );
@@ -72,9 +68,9 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawOrders]);
 
-  // The overall loading state is true until all prerequisites are met and
-  // the data has actually been fetched.
-  const isLoading = isAuthLoading || isAdminLoading || (canQuery && isOrdersLoading) || (!queryRef && !isAuthLoading && !isAdminLoading);
+  // We are in a loading state if we are still waiting for auth/admin checks,
+  // OR if the query is now running.
+  const isLoading = !canQuery || isOrdersLoadingFromHook;
 
   return (
     <OrderContext.Provider
