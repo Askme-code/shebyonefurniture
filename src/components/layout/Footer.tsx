@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { useEffect, useState } from 'react';
 
 const newsletterSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -31,6 +32,12 @@ function SocialIcon({ children, href }: { children: React.ReactNode; href: strin
 export function Footer() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   const form = useForm<NewsletterFormValues>({
     resolver: zodResolver(newsletterSchema),
@@ -141,23 +148,25 @@ export function Footer() {
             <p className="text-sm mb-4">
               Subscribe to our newsletter and get 30% off your first purchase.
             </p>
-             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
-                    <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem className="flex-1">
-                        <FormControl>
-                            <Input type="email" placeholder="Your Email Address" className="bg-card border-border text-card-foreground rounded-r-none focus:ring-primary focus:border-primary placeholder:text-muted-foreground h-10" {...field} />
-                        </FormControl>
-                        <FormMessage className="text-destructive-foreground/80 text-xs" />
-                        </FormItem>
-                    )}
-                    />
-                    <Button type="submit" disabled={form.formState.isSubmitting} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none shrink-0 h-10">Sign Up</Button>
-                </form>
-            </Form>
+             {mounted && (
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
+                        <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                            <FormControl>
+                                <Input type="email" placeholder="Your Email Address" className="bg-card border-border text-card-foreground rounded-r-none focus:ring-primary focus:border-primary placeholder:text-muted-foreground h-10" {...field} />
+                            </FormControl>
+                            <FormMessage className="text-destructive-foreground/80 text-xs" />
+                            </FormItem>
+                        )}
+                        />
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-l-none shrink-0 h-10">Sign Up</Button>
+                    </form>
+                </Form>
+             )}
             <h3 className="font-headline text-lg font-semibold text-card-foreground mt-6 mb-4">FOLLOW US</h3>
             <div className="flex space-x-2">
                 <SocialIcon href="https://www.facebook.com/search/top?q=Nilan%20Mujibu%20Sheby%20Jr"><Facebook className="h-5 w-5" /></SocialIcon>

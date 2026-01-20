@@ -59,6 +59,12 @@ export function FloatingActionMenu() {
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -107,6 +113,10 @@ export function FloatingActionMenu() {
     });
   };
   // End of chatbot logic
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <>
