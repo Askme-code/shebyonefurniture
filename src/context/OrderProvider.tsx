@@ -15,70 +15,49 @@ export const OrderContext = createContext<{
   isLoading: true,
 });
 
-/**
- * An internal component that fetches all orders.
- * It should ONLY be rendered after confirming the user is an admin.
- */
-function AdminOrderFetcher({ children }: { children: ReactNode }) {
-    const firestore = useFirestore();
-    
-    // This query fetches all documents from the 'orders' collection.
-    const ordersQuery = useMemoFirebase(
-        () => firestore ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc')) : null,
-        [firestore]
-    );
-
-    const { data: rawOrders, isLoading } = useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(ordersQuery);
-
-    const orders = useMemo(() => {
-        if (!rawOrders) return [];
-        return rawOrders.map(o => ({
-            ...o,
-            createdAt: o.createdAt?.toDate() ?? new Date(),
-        }));
-    }, [rawOrders]);
-
-    const contextValue = useMemo(() => ({
-        orders,
-        isLoading,
-    }), [orders, isLoading]);
-
-    return (
-        <OrderContext.Provider value={contextValue}>
-            {children}
-        </OrderContext.Provider>
-    );
-}
-
-/**
- * This provider now acts as a guard. It will only render the full data-fetching
- * component (`AdminOrderFetcher`) if it confirms the user has admin privileges.
- * Otherwise, it provides a safe, empty, non-loading state.
- */
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
+  const firestore = useFirestore();
 
-  // While we're checking for admin status, provide a loading state
-  // and prevent any data fetching attempts.
-  if (isAdminLoading) {
-    return (
-        <OrderContext.Provider value={{ orders: [], isLoading: true }}>
-            {children}
-        </OrderContext.Provider>
-    );
-  }
-  
-  // If the user is definitively not an admin, provide an empty, non-loading state.
-  // This prevents any downstream components from trying to use admin-only data.
-  if (!isAdmin) {
-    return (
-        <OrderContext.Provider value={{ orders: [], isLoading: false }}>
-            {children}
-        </OrderContext.Provider>
-    );
-  }
+  // Conditionally build the query. It will be null if the user is not an admin
+  // or if Firestore is not yet available. This is the core of the fix.
+  const adminOrdersQuery = useMemoFirebase(
+    () =>
+      isAdmin && firestore
+        ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'))
+        : null,
+    [isAdmin, firestore]
+  );
 
-  // If we've passed the guards, the user is a confirmed admin, and it's safe
-  // to render the component that will fetch all orders.
-  return <AdminOrderFetcher>{children}</AdminOrderFetcher>;
+  // The useCollection hook safely handles a null query by not fetching data.
+  const { data: rawOrders, isLoading: isOrdersLoading } = useCollection<
+    Omit<Order, 'createdAt'> & { createdAt: Timestamp }
+  >(adminOrdersQuery);
+
+  const orders = useMemo(() => {
+    if (!rawOrders) return [];
+    return rawOrders.map((o) => ({
+      ...o,
+      createdAt: o.createdAt?.toDate() ?? new Date(),
+    }));
+  }, [rawOrders]);
+
+  // The overall loading state is true if we're checking for admin status,
+  // or if we are an admin and the orders are still loading.
+  const isLoading = isAdminLoading || (isAdmin && isOrdersLoading);
+
+  const contextValue = useMemo(
+    () => ({
+      // Only provide the orders list if the user is a confirmed admin.
+      orders: isAdmin ? orders : [],
+      isLoading: isLoading,
+    }),
+    [orders, isLoading, isAdmin]
+  );
+
+  return (
+    <OrderContext.Provider value={contextValue}>
+      {children}
+    </OrderContext.Provider>
+  );
 };
