@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Bar,
   BarChart,
@@ -39,10 +39,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { File } from 'lucide-react';
+import { File, Lightbulb } from 'lucide-react';
 import { useOrders } from '@/hooks/use-orders';
 import { useProducts } from '@/hooks/use-products';
 import { getCategories } from '@/lib/data';
+import { generateReportInsights } from '@/ai/flows/generate-report-insights';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -77,12 +80,17 @@ export default function ReportsPage() {
   const { getProductById, isLoading: isLoadingProducts } = useProducts();
   const categories = useMemo(() => getCategories(), []);
 
+  const [insights, setInsights] = useState('');
+  const [isInsightsLoading, setIsInsightsLoading] = useState(true);
+
   const isLoading = isLoadingOrders || isLoadingProducts;
 
-  const { weeklySales, orderStatusData, categoryRevenue } = useMemo(() => {
+  const { weeklySales, orderStatusData, categoryRevenue, totalRevenue } = useMemo(() => {
     if (isLoading || !orders.length) {
-      return { weeklySales: [], orderStatusData: [], categoryRevenue: [] };
+      return { weeklySales: [], orderStatusData: [], categoryRevenue: [], totalRevenue: 0 };
     }
+
+    const totalRevenue = orders.reduce((sum, order) => order.status === 'Delivered' ? sum + order.total : sum, 0);
 
     // Weekly sales for the last 8 weeks
     const weeklySalesMap = new Map<string, number>();
@@ -154,8 +162,35 @@ export default function ReportsPage() {
       ([name, revenue]) => ({ name, revenue })
     ).filter(c => c.revenue > 0);
 
-    return { weeklySales, orderStatusData, categoryRevenue };
+    return { weeklySales, orderStatusData, categoryRevenue, totalRevenue };
   }, [orders, isLoading, getProductById, categories]);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      if (isLoading || weeklySales.length === 0) {
+        return;
+      }
+      
+      setIsInsightsLoading(true);
+      try {
+        const result = await generateReportInsights({
+          weeklySales,
+          orderStatusData,
+          categoryRevenue,
+          totalRevenue
+        });
+        setInsights(result);
+      } catch (error) {
+        console.error("Failed to generate AI insights:", error);
+        setInsights("Could not generate insights at this time. Please try again later.");
+      } finally {
+        setIsInsightsLoading(false);
+      }
+    };
+
+    fetchInsights();
+  }, [weeklySales, orderStatusData, categoryRevenue, totalRevenue, isLoading]);
+
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
@@ -259,7 +294,7 @@ export default function ReportsPage() {
     <div className="grid gap-4 md:gap-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline tracking-tight">Reports & Analytics</h1>
+          <h1 className="text-3xl font-headline tracking-tight">Reports &amp; Analytics</h1>
           <p className="text-lg text-muted-foreground">An overview of your store's performance.</p>
         </div>
         <DropdownMenu>
@@ -274,6 +309,29 @@ export default function ReportsPage() {
             </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-3">
+          <Lightbulb className="h-6 w-6 text-yellow-500" />
+          <CardTitle>AI-Powered Insights</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isInsightsLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-11/12" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-10/12" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : (
+            <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+              {insights.split('* ').filter(item => item.trim() !== '').map((item, index) => (
+                <li key={index}>{item.trim()}</li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
