@@ -37,13 +37,15 @@ const socialLinks = [
     name: 'Instagram',
     icon: <Instagram className="h-7 w-7" />,
     href: 'https://www.instagram.com/aymanfuniture?igsh=MWJ1dDNmZHI5ZXMydQ==',
-    color: 'bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500',
+    bgColor: 'bg-card hover:bg-muted border',
+    iconColor: 'text-card-foreground',
   },
   {
     name: 'WhatsApp',
     icon: <MessageCircle className="h-7 w-7" />,
     href: 'https://wa.me/255657687266?text=Hello%20Sheby%20One%20Furniture!%20I\'m%20interested%20in%20your%20products.',
-    color: 'bg-[#25D366]',
+    bgColor: 'bg-[#25D366] hover:bg-[#25D366]/90',
+    iconColor: 'text-white',
   },
 ];
 
@@ -123,7 +125,7 @@ export function FloatingActionMenu() {
             <SheetTrigger asChild>
               <Button
                 variant="default"
-                className="h-14 w-14 rounded-full shadow-lg bg-blue-500 hover:bg-blue-600"
+                className="h-14 w-14 rounded-full shadow-lg bg-card text-card-foreground hover:bg-muted border"
                 aria-label="Open Chat"
               >
                 <Bot className="h-7 w-7" />
@@ -141,8 +143,9 @@ export function FloatingActionMenu() {
                 <Button
                   size="icon"
                   className={cn(
-                    'h-14 w-14 rounded-full shadow-lg text-white',
-                    link.color
+                    'h-14 w-14 rounded-full shadow-lg',
+                    link.bgColor,
+                    link.iconColor
                   )}
                   aria-label={link.name}
                 >
