@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Mail, Phone, Facebook, Instagram, ArrowUp, ChevronRight, MessageCircle } from 'lucide-react';
+import { MapPin, Mail, Phone, Facebook, Instagram, ArrowUp, ChevronRight, MessageCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
@@ -86,6 +86,12 @@ export function Footer() {
                 <span>Zanzibar, Tanzania</span>
               </li>
               <li className="flex items-start gap-3">
+                <Globe className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <a href="https://share.google/ZeHHqoAqYboDU6Tkx" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  Google Business Profile
+                </a>
+              </li>
+              <li className="flex items-start gap-3">
                 <Mail className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <a href="mailto:contact@shaabanfurniture.com" className="hover:text-primary transition-colors">
                   contact@shaabanfurniture.com
@@ -99,8 +105,8 @@ export function Footer() {
               </li>
               <li className="flex items-start gap-3">
                 <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <a href="https://wa.me/255657687266" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  +255 657 687 266 (WhatsApp)
+                <a href="https://wa.me/255686587266" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  +255 686 587 266 (WhatsApp)
                 </a>
               </li>
             </ul>
@@ -155,7 +161,7 @@ export function Footer() {
             <h3 className="font-headline text-lg font-semibold text-card-foreground mt-6 mb-4">FOLLOW US</h3>
             <div className="flex space-x-2">
                 <SocialIcon href="https://www.facebook.com/search/top?q=Nilan%20Mujibu%20Sheby%20Jr"><Facebook className="h-5 w-5" /></SocialIcon>
-                <SocialIcon href="https://www.instagram.com/Aymanfurniture"><Instagram className="h-5 w-5" /></SocialIcon>
+                <SocialIcon href="https://www.instagram.com/aymanfuniture?igsh=MWJ1dDNmZHI5ZXMydQ=="><Instagram className="h-5 w-5" /></SocialIcon>
             </div>
           </div>
         </div>
