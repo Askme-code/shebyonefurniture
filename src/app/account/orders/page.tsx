@@ -1,38 +1,15 @@
 'use client';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp, orderBy } from 'firebase/firestore';
+import { useOrders } from '@/hooks/use-orders';
 import type { Order } from '@/lib/types';
-import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-type OrderWithDate = Omit<Order, 'createdAt'> & { createdAt: Date };
 
 export default function MyOrdersPage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
-
-    const userOrdersQuery = useMemoFirebase(
-        () => (firestore && user ? query(
-            collection(firestore, 'orders'),
-            where('userId', '==', user.uid),
-            orderBy('createdAt', 'desc')
-        ) : null),
-        [firestore, user]
-    );
-
-    const { data: rawOrders, isLoading: areOrdersLoading } = useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(userOrdersQuery);
-
-    const orders = useMemo(() => {
-        if (!rawOrders) return [];
-        return rawOrders.map(o => ({
-            ...o,
-            createdAt: o.createdAt?.toDate() ?? new Date(),
-        }));
-    }, [rawOrders]);
+    const { orders, isLoading: areOrdersLoading } = useOrders();
 
     return (
         <Card>

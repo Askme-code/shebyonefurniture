@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartProvider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
 import { ProductProvider } from '@/context/ProductProvider';
+import { OrderProvider } from '@/context/OrderProvider';
 
 export const metadata: Metadata = {
   title: 'Sheby One Furniture',
@@ -26,10 +27,12 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
           <ProductProvider>
-            <CartProvider>
-              {children}
-              <Toaster />
-            </CartProvider>
+            <OrderProvider>
+              <CartProvider>
+                {children}
+                <Toaster />
+              </CartProvider>
+            </OrderProvider>
           </ProductProvider>
         </FirebaseClientProvider>
         <div className="gtranslate_wrapper"></div>

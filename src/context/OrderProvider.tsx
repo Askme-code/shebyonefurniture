@@ -33,29 +33,32 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
-  // This flag is the master gate: we can only query if auth and admin checks are done, and we have a user.
-  const canQuery = !!firestore && !isAuthLoading && !isAdminLoading && !!user;
-
+  // The query logic now depends on the user's role being fully resolved.
   const queryRef = useMemoFirebase(() => {
-    // If we can't query yet, return null. The useCollection hook will wait.
-    if (!canQuery) {
+    // Don't create any query until we know who the user is and what their role is.
+    if (isAuthLoading || isAdminLoading || !user || !firestore) {
       return null;
     }
 
-    // Return the appropriate query based on the user's role.
-    return isAdmin
-      ? query(
+    if (isAdmin) {
+      // User is confirmed admin, create admin query for all orders.
+      return query(
           collection(firestore, 'orders'),
           orderBy('createdAt', 'desc')
-        )
-      : query(
+        );
+    } else {
+      // User is confirmed non-admin, create a user-specific query.
+      return query(
           collection(firestore, 'orders'),
           where('userId', '==', user.uid),
           orderBy('createdAt', 'desc')
         );
-  }, [canQuery, isAdmin, firestore, user]);
+    }
+  }, [user, isAdmin, isAuthLoading, isAdminLoading, firestore]);
 
-  const { data: rawOrders, isLoading: isOrdersLoadingFromHook } =
+  // useCollection is safe to call here because it correctly handles a null query,
+  // preventing any request from being sent until the queryRef is valid.
+  const { data: rawOrders, isLoading: isOrdersLoading } =
     useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(
       queryRef
     );
@@ -68,9 +71,9 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [rawOrders]);
 
-  // We are in a loading state if we are still waiting for auth/admin checks,
-  // OR if the query is now running.
-  const isLoading = !canQuery || isOrdersLoadingFromHook;
+  // The overall loading state is true until both auth/admin checks are done
+  // AND the subsequent data fetch (if any) is complete.
+  const isLoading = isAuthLoading || isAdminLoading || (queryRef !== null && isOrdersLoading);
 
   return (
     <OrderContext.Provider
