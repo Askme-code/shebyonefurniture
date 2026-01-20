@@ -15,7 +15,6 @@ export async function generateReportInsights(input: ReportInsightsInput): Promis
 const prompt = ai.definePrompt({
   name: 'reportInsightsPrompt',
   input: { schema: ReportInsightsInputSchema },
-  output: { schema: ReportInsightsOutputSchema },
   prompt: `You are a business intelligence analyst for an online furniture store. Your task is to analyze the following sales data and provide actionable insights.
 
 The currency is Tanzanian Shillings (TZS).
@@ -44,7 +43,8 @@ const reportInsightsFlow = ai.defineFlow(
     outputSchema: ReportInsightsOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const response = await prompt(input);
+    const output = response.text;
     return output || "AI insights could not be generated at this time. Please try again later.";
   }
 );
