@@ -7,6 +7,7 @@
  * Data Structure:
  * - /products/{productId}: A public, top-level collection of all products.
  * - /orders/{orderId}: A top-level collection of all orders. Orders contain a `userId` field to link them to their owner.
+ * - /users/{userId}: A collection storing public profile data for every user, keyed by their UID.
  * - /roles_admin/{userId}: A lookup collection to identify administrators. The existence of a
  *   document here grants a user admin privileges across the entire database.
  * - /messages/{messageId}: A collection for contact form submissions. Publicly writable, admin-only readable.
@@ -15,8 +16,8 @@
  * - Admin Role Management: Administrator privileges are granted if a document exists for the user
  *   in the `/roles_admin` collection. This collection is read-only for clients to prevent any
  *   user from elevating their own permissions. It must be managed by a trusted server process.
- * - Ownership: Customer data, such as orders, is secured by a `userId` field within the document itself.
- *   This ensures users can only ever access their own information, even in a shared, top-level collection.
+ * - Ownership: Customer data, such as orders and user profiles, is secured by a `userId` field or document ID.
+ *   This ensures users can only ever access their own information.
  * - Public Data: The `/products` collection is world-readable to allow anyone, including
  *   unauthenticated users, to browse the product catalog.
  *
@@ -99,9 +100,7 @@ service cloud.firestore {
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
@@ -122,19 +121,35 @@ service cloud.firestore {
     }
 
     /**
+     * @description Controls access to user profile data.
+     * @path /users/{userId}
+     * @allow (read, write) for admins.
+     * @allow (get, create, update) for the user who owns the profile.
+     * @deny (delete) for non-admin users.
+     * @principle Admins have full control. Users can manage their own profile but cannot delete it.
+     */
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId)
+                      && request.resource.data.id == resource.data.id
+                      && request.resource.data.email == resource.data.email
+                      && request.resource.data.createdAt == resource.data.createdAt;
+    }
+    
+    /**
      * @description Controls access to the admin role lookup collection.
      * @path /roles_admin/{userId}
-     * @allow (get) A signed-in user can check their own role status.
-     * @allow (list) An admin to see the list of other admins.
-     * @deny All write operations (create, update, delete) from any client to prevent privilege escalation.
-     * @principle Secures the authorization mechanism itself. This collection should only be managed by a trusted backend server.
+     * @allow (read, write) for admins.
+     * @allow (get) for a signed-in user to check their own role status.
+     * @deny All other client operations to prevent privilege escalation.
+     * @principle Secures the authorization mechanism. Admin role assignments should ideally
+     * be done by a trusted backend, but we allow admins to manage it from the client for this app.
      */
     match /roles_admin/{userId} {
+      allow read, write: if isAdmin();
       allow get: if isOwner(userId);
-      allow list: if isAdmin();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
     }
 
     /**

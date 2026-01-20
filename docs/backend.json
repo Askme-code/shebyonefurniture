@@ -139,6 +139,45 @@
         "role"
       ]
     },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's public profile data.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The user's unique ID from Firebase Auth."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account was first created in Firestore."
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the user's last login."
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    },
     "NewsletterSubscriber": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Newsletter Subscriber",
@@ -240,6 +279,22 @@
         }
       },
       {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores public user profile data. Created on first login. Admins can manage all users, users can only manage their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "User's auth UID."
+            }
+          ]
+        }
+      },
+      {
         "path": "/roles_admin/{userId}",
         "definition": {
           "entityName": "User",
@@ -288,6 +343,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a top-level `orders` collection. This structure allows admins to efficiently query all orders for the admin dashboard. Security rules ensure that users can only read/write their own orders (by checking the `userId` field in the order document), while admins have full access. This avoids the limitations of securing collection group queries with `exists()` or `get()` calls to other documents.\n3.  **Users:** User roles are managed via a dedicated `roles_admin` collection. The presence of a document with the user's ID indicates admin status.  This existence-based check is efficient and avoids complex data comparisons in security rules.\n\nThis structure facilitates secure `list` operations (QAPs) by:\n\n*   Using a top-level collection for orders, which can be directly and efficiently queried by admins.\n*   Securing user-specific data (orders) based on a `userId` field within the document, allowing users to securely query for their own data without being able to see others'.\n*   Using a dedicated `/roles_admin` collection for global role management, enabling efficient authorization checks."
+    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a top-level `orders` collection. This structure allows admins to efficiently query all orders for the admin dashboard. Security rules ensure that users can only read/write their own orders (by checking the `userId` field in the order document), while admins have full access. This avoids the limitations of securing collection group queries with `exists()` or `get()` calls to other documents.\n3.  **Users & Roles:** A `/users` collection stores public profile information for all registered users, created automatically on first login. This allows admins to view and manage a list of all application users. A separate `roles_admin` collection manages administrator privileges via an existence check, which is highly performant. Admins can modify the `roles_admin` collection to grant or revoke privileges.\n\nThis structure facilitates secure `list` operations (QAPs) by:\n\n*   Using top-level collections for orders and users, which can be directly and efficiently queried by admins.\n*   Securing user-specific data (orders, user profiles) based on a `userId` field or document ID, allowing users to securely query for their own data without being able to see others'.\n*   Using a dedicated `/roles_admin` collection for global role management, enabling efficient authorization checks."
   }
 }
