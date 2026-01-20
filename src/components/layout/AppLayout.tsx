@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { WhatsappButton } from '../ui/WhatsappButton';
-import { Chatbot } from '../chat/Chatbot';
+import { FloatingActionMenu } from './FloatingActionMenu';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,8 +9,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <Header />
       <main className="flex-grow">{children}</main>
       <Footer />
-      <WhatsappButton />
-      <Chatbot />
+      <FloatingActionMenu />
     </div>
   );
 }
