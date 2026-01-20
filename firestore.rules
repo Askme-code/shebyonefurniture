@@ -130,12 +130,7 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow read, write: if isAdmin();
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId)
-                      && request.resource.data.id == resource.data.id
-                      && request.resource.data.email == resource.data.email
-                      && request.resource.data.createdAt == resource.data.createdAt;
+      allow get, create, update: if isOwner(userId);
     }
     
     /**

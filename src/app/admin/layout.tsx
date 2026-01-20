@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -305,7 +306,7 @@ export default function AdminLayout({
                     </Link>
                     <Link
                       href="/admin/messages"
-                      className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      className="flex items-center gap-4 px-2.5 text-foreground"
                     >
                       <MessageSquare className="h-5 w-5" />
                       Message Management
