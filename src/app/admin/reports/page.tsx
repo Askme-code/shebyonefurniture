@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -12,6 +13,9 @@ import {
   YAxis,
 } from 'recharts';
 import { format, startOfISOWeek, parseISO } from 'date-fns';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 import {
   Card,
@@ -28,9 +32,23 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { File } from 'lucide-react';
 import { useOrders } from '@/hooks/use-orders';
 import { useProducts } from '@/hooks/use-products';
 import { getCategories } from '@/lib/data';
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 const chartConfig: ChartConfig = {
   revenue: {
@@ -139,6 +157,68 @@ export default function ReportsPage() {
     return { weeklySales, orderStatusData, categoryRevenue };
   }, [orders, isLoading, getProductById, categories]);
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Sheby One Furniture - Reports", 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Report generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+    let finalY = 35;
+
+    if (weeklySales.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Weekly Sales (Last 8 Weeks)", 14, finalY + 5);
+        doc.autoTable({
+            startY: finalY + 7,
+            head: [['Date', 'Revenue (TZS)']],
+            body: weeklySales.map(d => [d.date, d.revenue.toLocaleString()]),
+        });
+        finalY = (doc as any).lastAutoTable.finalY;
+    }
+
+    if (orderStatusData.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Order Status Distribution", 14, finalY + 10);
+        doc.autoTable({
+            startY: finalY + 12,
+            head: [['Status', 'Count']],
+            body: orderStatusData.map(d => [d.name, d.value]),
+        });
+        finalY = (doc as any).lastAutoTable.finalY;
+    }
+
+    if (categoryRevenue.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Revenue by Category", 14, finalY + 10);
+        doc.autoTable({
+            startY: finalY + 12,
+            head: [['Category', 'Revenue (TZS)']],
+            body: categoryRevenue.map(d => [d.name, d.revenue.toLocaleString()]),
+        });
+    }
+
+    doc.save('sheby-furniture-reports.pdf');
+  };
+
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new();
+    if(weeklySales.length > 0) {
+        const ws1 = XLSX.utils.json_to_sheet(weeklySales.map(item => ({ 'Date': item.date, 'Revenue (TZS)': item.revenue })));
+        XLSX.utils.book_append_sheet(wb, ws1, "Weekly Sales");
+    }
+    if(orderStatusData.length > 0) {
+        const ws2 = XLSX.utils.json_to_sheet(orderStatusData.map(d => ({ Status: d.name, Count: d.value })));
+        XLSX.utils.book_append_sheet(wb, ws2, "Order Status");
+    }
+    if(categoryRevenue.length > 0) {
+        const ws3 = XLSX.utils.json_to_sheet(categoryRevenue.map(item => ({ 'Category': item.name, 'Revenue (TZS)': item.revenue })));
+        XLSX.utils.book_append_sheet(wb, ws3, "Revenue by Category");
+    }
+    XLSX.writeFile(wb, "sheby-furniture-reports.xlsx");
+  };
+
   if (isLoading) {
     return (
       <div className="grid gap-4 md:gap-8">
@@ -177,6 +257,24 @@ export default function ReportsPage() {
 
   return (
     <div className="grid gap-4 md:gap-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-headline tracking-tight">Reports & Analytics</h1>
+          <p className="text-lg text-muted-foreground">An overview of your store's performance.</p>
+        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    <File className="mr-2 h-4 w-4" /> Export
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportPDF}>Export as PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportExcel}>Export as Excel</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
