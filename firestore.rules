@@ -1,173 +1,74 @@
-
-/**
- * Core Philosophy: This ruleset enforces a two-tiered access model: public/customer versus admin.
- * Admins have broad read/write access across the database, while customers are restricted to their
- * own data and can read public data. Anonymous users can only read public data.
- *
- * Data Structure:
- * - /products/{productId}: A public, top-level collection of all products.
- * - /orders/{orderId}: A top-level collection of all orders. Orders contain a `userId` field to link them to their owner.
- * - /users/{userId}: A collection storing public profile data for every user, keyed by their UID.
- * - /roles_admin/{userId}: A lookup collection to identify administrators. The existence of a
- *   document here grants a user admin privileges across the entire database.
- * - /messages/{messageId}: A collection for contact form submissions. Publicly writable, admin-only readable.
- *
- * Key Security Decisions:
- * - Admin Role Management: Administrator privileges are granted if a document exists for the user
- *   in the `/roles_admin` collection. This collection is read-only for clients to prevent any
- *   user from elevating their own permissions. It must be managed by a trusted server process.
- * - Ownership: Customer data, such as orders and user profiles, is secured by a `userId` field or document ID.
- *   This ensures users can only ever access their own information.
- * - Public Data: The `/products` collection is world-readable to allow anyone, including
- *   unauthenticated users, to browse the product catalog.
- *
- * Denormalization for Authorization:
- * The `/roles_admin/{userId}` collection is a prime example of denormalizing for authorization.
- * Instead of storing a 'role' field on a user document and requiring slow `get()` calls in rules,
- * we use a simple and fast `exists()` check against this collection to determine admin status.
- * This pattern is highly performant and secure.
- *
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------------------------------------------------------
+    // ------------------------------
     // Helper Functions
-    // ----------------------------------------------------------------------
+    // ------------------------------
 
-    /**
-     * Checks if the user is authenticated.
-     */
+    // Checks if a user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the authenticated user is the owner of the document,
-     * based on the userId provided in the path.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * Checks if the user has an admin role by verifying the existence of
-     * their UID in the roles_admin collection.
-     */
+    // Checks if the current user is an admin
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /**
-     * Verifies that the document being modified or deleted already exists.
-     * Prevents operations on non-existent documents.
-     */
-    function isExistingDoc() {
-      return resource != null;
+    // Checks if the current user owns the document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * On order update, enforces that the `userId` field is immutable,
-     * preventing an order from being reassigned to a different user.
-     */
-    function isOrderDataValidOnUpdate() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-    /**
-     * On order creation, validates that all required fields are present and the
-     * initial status is 'Pending', improving data integrity.
-     */
-    function isValidOrderCreate() {
-      let data = request.resource.data;
-      return data.keys().hasAll([
-        'customerName', 'phone', 'address', 'items', 'total', 'status', 'createdAt', 'userId'
-      ]) && data.status == 'Pending';
-    }
-
-
-    // ----------------------------------------------------------------------
-    // Collection Rules
-    // ----------------------------------------------------------------------
-
-    /**
-     * @description Controls access to the public product catalog.
-     * @path /products/{productId}
-     * @allow (get, list) for any user, including unauthenticated users, to browse products.
-     * @deny (create, update, delete) for non-admin users.
-     * @principle Public read access for catalog data, with admin-only write controls.
-     */
+    // ------------------------------
+    // Products - Public catalog
+    // ------------------------------
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow get, list: if true;             // Everyone can view
+      allow create, update, delete: if isAdmin();  // Only admins can modify
     }
 
-    /**
-     * @description Controls access to the top-level orders collection.
-     * @path /orders/{orderId}
-     * @allow (create) for an authenticated user to create their own order.
-     * @allow (read) if the user is an admin OR if they are the owner of the document. This is the key rule that allows filtered queries for users and full list access for admins without error.
-     * @allow (update, delete) only for admins.
-     * @principle A single, document-level `read` rule correctly handles both direct `get` requests and `list` (query) operations.
-     */
+    // ------------------------------
+    // Orders - Users and admins
+    // ------------------------------
     match /orders/{orderId} {
-      allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
-      allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+
+      // Create a new order → only the owner (user) can create
+      allow create: if isOwner(request.resource.data.userId);
+
+      // Get a single order → only owner or admin
+      allow get: if isOwner(resource.data.userId) || isAdmin();
+
+      // List orders → admin sees all, user sees only their own if query is correct
+      allow list: if isAdmin() || (isSignedIn() && request.query.where.keys().hasAny(['userId']) && request.query.where.userId == request.auth.uid);
+
+      // Update/Delete → only admins
       allow update, delete: if isAdmin();
     }
 
-    /**
-     * @description Controls access to user profile data.
-     * @path /users/{userId}
-     * @allow (read, write) for admins.
-     * @allow (get, create, update) for the user who owns the profile.
-     * @deny (delete) for non-admin users.
-     * @principle Admins have full control. Users can manage their own profile but cannot delete it.
-     */
+    // ------------------------------
+    // Users - Profile data
+    // ------------------------------
     match /users/{userId} {
-      allow read, write: if isAdmin();
-      allow get, create, update: if isOwner(userId);
+      allow get, update: if isOwner(userId) || isAdmin();  // User can manage own profile
+      allow create: if isSignedIn();                       // Users can create their own profile
+      allow delete: if isAdmin();                          // Only admins can delete users
+      allow list: if isAdmin();                            // Only admins can list all users
     }
-    
-    /**
-     * @description Controls access to the admin role lookup collection.
-     * @path /roles_admin/{userId}
-     * @allow (read, write) for admins.
-     * @allow (get) for a signed-in user to check their own role status.
-     * @deny All other client operations to prevent privilege escalation.
-     * @principle Secures the authorization mechanism. Admin role assignments should ideally
-     * be done by a trusted backend, but we allow admins to manage it from the client for this app.
-     */
+
+    // ------------------------------
+    // Admin roles
+    // ------------------------------
     match /roles_admin/{userId} {
-      allow read, write: if isAdmin();
-      allow get: if isOwner(userId);
+      allow read, write: if isAdmin();     // Only admins can manage admin roles
+      allow get: if isOwner(userId);       // Users can check if they are admin
+      allow list: if false;                // No listing allowed
     }
 
-    /**
-     * @description Publicly-writable collection for newsletter sign-ups.
-     * @path /newsletter_subscribers/{subscriberId}
-     * @allow (create) for any user to sign up for the newsletter. Validates email format.
-     * @allow (read, list, update, delete) only for admins.
-     * @principle Allow public write for sign-ups but restrict read access to protect user data.
-     */
-    match /newsletter_subscribers/{subscriberId} {
-      function isValidSubscription() {
-        let email = request.resource.data.email;
-        return email is string && email.matches('^[^@]+@[^@]+\\.[^@]+$') && request.resource.data.keys().hasAll(['email', 'createdAt']);
-      }
-
-      allow create: if isValidSubscription();
-      allow read, list, update, delete: if isAdmin();
-    }
-    
-    /**
-     * @description Controls messages sent from the contact form.
-     * @path /messages/{messageId}
-     * @allow (create) for any user, validating the message structure.
-     * @allow (get, list, update, delete) only for admins to manage messages.
-     * @principle Allows public submission while securing message content for admin review.
-     */
+    // ------------------------------
+    // Messages - Contact form
+    // ------------------------------
     match /messages/{messageId} {
       function isValidMessage() {
         let data = request.resource.data;
@@ -180,6 +81,19 @@ service cloud.firestore {
 
       allow create: if isValidMessage();
       allow get, list, update, delete: if isAdmin();
+    }
+
+    // ------------------------------
+    // Newsletter subscribers
+    // ------------------------------
+    match /newsletter_subscribers/{subscriberId} {
+      function isValidSubscription() {
+        let email = request.resource.data.email;
+        return email is string && email.matches('^[^@]+@[^@]+\\.[^@]+$') && request.resource.data.keys().hasAll(['email', 'createdAt']);
+      }
+
+      allow create: if isValidSubscription();
+      allow read, list, update, delete: if isAdmin();
     }
   }
 }
