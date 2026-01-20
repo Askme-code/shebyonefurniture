@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Mail, Phone, Twitter, Facebook, Linkedin, Instagram, ArrowUp, ChevronRight } from 'lucide-react';
+import { MapPin, Mail, Phone, Facebook, Instagram, ArrowUp, ChevronRight, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
@@ -97,6 +97,12 @@ export function Footer() {
                   +255 686 587 266
                 </a>
               </li>
+              <li className="flex items-start gap-3">
+                <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <a href="https://wa.me/255657687266" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  +255 657 687 266 (WhatsApp)
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -148,10 +154,8 @@ export function Footer() {
             </Form>
             <h3 className="font-headline text-lg font-semibold text-card-foreground mt-6 mb-4">FOLLOW US</h3>
             <div className="flex space-x-2">
-                <SocialIcon href="#"><Twitter className="h-5 w-5" /></SocialIcon>
-                <SocialIcon href="#"><Facebook className="h-5 w-5" /></SocialIcon>
-                <SocialIcon href="#"><Linkedin className="h-5 w-5" /></SocialIcon>
-                <SocialIcon href="https://www.instagram.com/aymanfuniture?igsh=MWJ1dDNmZHI5ZXMydQ=="><Instagram className="h-5 w-5" /></SocialIcon>
+                <SocialIcon href="https://www.facebook.com/search/top?q=Nilan%20Mujibu%20Sheby%20Jr"><Facebook className="h-5 w-5" /></SocialIcon>
+                <SocialIcon href="https://www.instagram.com/Aymanfurniture"><Instagram className="h-5 w-5" /></SocialIcon>
             </div>
           </div>
         </div>

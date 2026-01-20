@@ -62,7 +62,7 @@ export default function Home() {
               Have a specific design in mind? We bring your vision to life with our custom furniture services.
             </p>
             <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary">
-              <a href="https://wa.me/255686587266" target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/255657687266" target="_blank" rel="noopener noreferrer">
                 Inquire on WhatsApp
               </a>
             </Button>

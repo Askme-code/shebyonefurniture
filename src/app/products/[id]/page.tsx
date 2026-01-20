@@ -86,7 +86,7 @@ export default function ProductPage() {
             <div className="flex flex-col sm:flex-row gap-4">
                 <AddToCart product={product} />
                  <Button asChild size="lg" variant="outline">
-                    <a href="https://wa.me/255686587266" target="_blank" rel="noopener noreferrer">
+                    <a href="https://wa.me/255657687266" target="_blank" rel="noopener noreferrer">
                         Order via WhatsApp
                     </a>
                 </Button>
