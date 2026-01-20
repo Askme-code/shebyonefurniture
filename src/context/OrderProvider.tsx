@@ -22,14 +22,17 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   const queryRef = useMemoFirebase(() => {
-    if (!firestore || isAuthLoading || isAdminLoading || !user) return null;
+    // Wait until all auth/admin checks are done and we have a user.
+    if (isAuthLoading || isAdminLoading || !user || !firestore) {
+      return null;
+    }
 
-    // Admins get all orders
+    // For admins, query the entire collection.
     if (isAdmin) {
       return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
     }
 
-    // Regular user gets only their orders
+    // For regular users, build a query filtered by their user ID.
     return query(
       collection(firestore, 'orders'),
       where('userId', '==', user.uid),
@@ -37,6 +40,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [firestore, user, isAdmin, isAuthLoading, isAdminLoading]);
 
+  // The useCollection hook will safely handle the null initial state of queryRef.
   const { data: rawOrders, isLoading: isOrdersLoading } =
     useCollection<Omit<Order, 'createdAt'> & { createdAt: Timestamp }>(queryRef);
 
@@ -47,8 +51,8 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
       createdAt: o.createdAt?.toDate() ?? new Date(),
     }));
   }, [rawOrders]);
-
-  // The overall loading state is true if we are waiting for auth, admin check, or the orders themselves.
+  
+  // The overall loading state is true until all checks and the data fetch are complete.
   const isLoading = isAuthLoading || isAdminLoading || isOrdersLoading;
 
   return (
