@@ -142,7 +142,7 @@ export default function ContactPage() {
           <h2 className="text-3xl font-headline text-center mb-8">Our Location</h2>
           <div className="rounded-lg overflow-hidden shadow-lg border">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d991.6300675436861!2d39.28522936074501!3d-6.194873163728559!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x185cd91f75748019%3A0x99650b207d418cae!2sJumbi%20juu%20ya%20kilima!5e0!3m2!1sen!2stz!4v1768936569346!5m2!1sen!2stz"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4880.678940990492!2d39.28312387586798!3d-6.194905360692695!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x185cd918e197ae1b%3A0x67e2a5fa0693be68!2sShebyone%20furniture%20zanzibar%20Tanzania2024!5e1!3m2!1sen!2stz!4v1768937815109!5m2!1sen!2stz"
               width="100%"
               height="450"
               style={{ border: 0 }}
