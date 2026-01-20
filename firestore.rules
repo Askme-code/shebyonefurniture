@@ -106,15 +106,13 @@ service cloud.firestore {
     /**
      * @description Controls access to the top-level orders collection.
      * @path /orders/{orderId}
-     * @allow (get) for an admin OR if the user is the owner of the specific order document.
-     * @allow (list) for an admin (all orders) OR for a user querying their own orders.
+     * @allow (read) for an admin OR if the user is the owner of the specific order document. This allows admins to list all orders, and users to query for their own.
      * @allow (create) if the user is the owner of the new order and the data is valid.
      * @allow (update, delete) for an admin OR if the user is the owner.
      * @principle A `list` query from a non-admin must be constrained with `where('userId', '==', auth.uid)` on the client.
      */
     match /orders/{orderId} {
-      allow list: if isAdmin() || isSignedIn();
-      allow get: if isAdmin() || isOwner(resource.data.userId);
+      allow read: if isAdmin() || isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
       allow update: if (isAdmin() || (isExistingDoc() && isOwner(resource.data.userId))) && isOrderDataValidOnUpdate();
       allow delete: if isAdmin() || (isExistingDoc() && isOwner(resource.data.userId));
