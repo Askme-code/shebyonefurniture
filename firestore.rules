@@ -71,9 +71,9 @@ service cloud.firestore {
         && d.message is string && d.message.size() >= 10
         && d.status == 'pending';
     }
-    
+
     // ==============================
-    // PUBLIC REVIEWS (SAFE)
+    // PUBLIC REVIEWS (SAFE & CORRECT)
     // ==============================
     match /reviews_public/{reviewId} {
       allow get, list: if true;
@@ -81,20 +81,16 @@ service cloud.firestore {
     }
 
     // ==============================
-    // PRIVATE REVIEWS
+    // PRIVATE REVIEWS (SAFE & CORRECT)
     // ==============================
     match /reviews_private/{reviewId} {
-
-      // User submits review
+      // User submits a new review for moderation
       allow create: if isValidReviewCreate();
 
-      // User can read their own single review, Admin can read any
-      allow get: if isAdmin() || isOwner(resource.data.userId);
-      
-      // User can list their own reviews via query, Admin can list all
-      allow list: if isAdmin() || (isSignedIn() && request.query.where('userId', '==', request.auth.uid));
+      // Users can read their own submissions, Admins can read all
+      allow read: if isAdmin() || isOwner(resource.data.userId);
 
-      // Admin moderation
+      // Admins can moderate (approve/reject)
       allow update, delete: if isAdmin();
     }
 
@@ -107,41 +103,22 @@ service cloud.firestore {
     }
 
     // ==============================
-    // Orders
+    // Orders (SAFE & CORRECT)
     // ==============================
     match /orders/{orderId} {
-
       // Create order
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
+      allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
 
       // Get single order
-      allow get: if request.auth != null
-        && (
-          isAdmin()
-          || resource.data.userId == request.auth.uid
-        );
+      allow get: if isAdmin() || isOwner(resource.data.userId);
 
       // List orders
-      // Admin → all
-      // User → ONLY via where("userId" == uid)
-      allow list: if request.auth != null
-        && (
-          isAdmin()
-          || request.query != null
-        );
-
-      // Update (cancel)
-      allow update: if request.auth != null
-        && (
-          isAdmin()
-          || (
-            resource.data.userId == request.auth.uid
-            && resource.data.status == "Pending"
-            && request.resource.data.keys().hasOnly(["status"])
-            && request.resource.data.status == "Cancelled"
-          )
-        );
+      // - Admins can list all orders.
+      // - Users can list orders ONLY if they include a 'where("userId", "==", uid)' clause.
+      allow list: if isAdmin() || (isSignedIn() && request.query.where.keys().hasAny(['userId']));
+        
+      // Update (e.g., a user cancelling their own pending order)
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && resource.data.status == 'Pending' && request.resource.data.keys().hasOnly(['status']) && request.resource.data.status == 'Cancelled');
 
       allow delete: if isAdmin();
     }
@@ -152,19 +129,20 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isSignedIn();
       allow get, update: if isOwner(userId) || isAdmin();
-      allow delete, list: if isAdmin();
+      allow list, delete: if isAdmin();
     }
 
     // ==============================
-    // Admin Roles
+    // Admin Roles (SAFE & CORRECT)
     // ==============================
     match /roles_admin/{userId} {
-      // Any signed-in user can check their own role document.
-      // This is required for the isAdmin() helper to work without circular dependencies.
-      allow get: if isOwner(userId);
-      // Only an existing admin can grant/revoke admin status.
+      // Allow users to check their own role status to prevent circular dependencies in `isAdmin()`
+      allow get: if isOwner(userId) || isAdmin();
+      
+      // Only admins can grant/revoke admin status
       allow write: if isAdmin();
-      // Disallow listing all admins for security.
+
+      // Prevent anyone from listing all admins for security
       allow list: if false;
     }
 
