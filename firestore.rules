@@ -88,10 +88,13 @@ service cloud.firestore {
       // User submits review
       allow create: if isValidReviewCreate();
 
-      // User can read their own reviews, Admin can read any
-      allow read: if isAdmin() || isOwner(resource.data.userId);
+      // User can read their own single review, Admin can read any
+      allow get: if isAdmin() || isOwner(resource.data.userId);
+      
+      // User can list their own reviews via query, Admin can list all
+      allow list: if isAdmin() || (isSignedIn() && request.query.where('userId', '==', request.auth.uid));
 
-      // Admin moderation (update is used for status change)
+      // Admin moderation
       allow update, delete: if isAdmin();
     }
 
