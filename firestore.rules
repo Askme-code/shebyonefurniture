@@ -1,162 +1,127 @@
 /**
- * This ruleset enforces a security model with three primary levels of access:
- * public, user-owned, and admin. It is designed for an e-commerce platform
- * where product information is public, user data is private, and administrators
- * have elevated privileges.
+ * This ruleset enforces a dual-access security model for an e-commerce application.
  *
  * Core Philosophy:
- * The security model prioritizes a "default deny" posture. Access is granted
- * explicitly based on user ownership or a specific administrative role. This ensures
- * that user data remains private and system integrity is maintained.
+ * The security model separates public catalog data from private user data.
+ * Public data (products) is readable by everyone but can only be modified by administrators.
+ * Private user data (orders, style profiles) is strictly controlled, allowing access only to the data owner, with specific read-only overrides for administrators on certain collections (e.g., orders for customer support).
  *
  * Data Structure:
- * - /products/{productId}: A public collection for the product catalog.
- * - /users/{userId}: Private documents for each user's profile information.
- * - /users/{userId}/orders/{orderId}: A private subcollection for each user's orders,
- *   ensuring data is segregated by owner.
- * - /roles_admin/{userId}: A secure, admin-readable collection used as a lookup table.
- *   The existence of a document in this collection grants a user admin privileges.
+ * - `/products`: A top-level collection for all product information, designed for public browsing.
+ * - `/roles_admin`: A top-level collection used as an access control list; the existence of a user's UID as a document ID grants them admin privileges.
+ * - `/users/{userId}`: A user-specific data root. All private data, such as orders and style profiles, is nested within subcollections here to enforce ownership via the path.
  *
  * Key Security Decisions:
- * - Admin Role Management: Admin status is determined by the existence of a document
- *   in the /roles_admin collection. This is a performant and secure pattern that avoids
- *   storing roles on user-modifiable documents. The /roles_admin collection itself is
- *   read-only from the client to prevent privilege escalation.
- * - User Privacy: Listing the top-level /users collection is explicitly disallowed
- *   to protect the privacy of all users on the platform.
- * - Ownership Model: Data under /users/{userId} is strictly controlled, allowing access
- *   only to the owning user or an administrator. This is enforced using the {userId}
- *   wildcard from the document path.
- * - Public Data: The /products collection is publicly readable by anyone, including
- *   unauthenticated users, to support catalog browsing. However, all write operations
- *   (create, update, delete) are restricted to administrators.
+ * - Admin Role Management: Administrator status is determined by checking for the existence of a document at `/roles_admin/{userId}`. This collection is locked from all client-side writes to prevent privilege escalation.
+ * - Public vs. Private Data: Public product data is in its own collection (`/products`) for simple and performant public listing. Private data is segregated under `/users/{userId}/...`, which naturally scopes access.
+ * - Order Immutability: Once an order is created by a user, it cannot be modified or deleted from the client-side. This protects the integrity of the order history.
+ * - Strict Privacy for Profiles: A user's style profile is considered private and is not accessible by administrators, ensuring user privacy.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Helper Functions
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
-     * Verifies that the user is authenticated.
+     * Returns true if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Verifies that the authenticated user's UID matches the provided userId,
-     * typically from the document path.
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * This is the primary mechanism for verifying data ownership.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * Checks if the authenticated user has administrative privileges.
-     * This is determined by the existence of a document for their UID in the
-     * /roles_admin collection. This function incurs a read cost.
+     * Returns true if the user is an owner of an EXISTING document.
+     * Crucial for preventing writes to non-existent documents.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Returns true if the requesting user has an admin role.
+     * Admin status is granted by the existence of a document in the `roles_admin` collection.
      */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /**
-     * A robust check for update and delete operations, ensuring the document
-     * being modified actually exists in the database.
-     */
-    function docExists() {
-      return resource != null;
-    }
-
-    /**
-     * On create, validates that the user document's internal 'id' field matches
-     * the document's ID, which is the user's UID. This establishes the
-     * ownership link securely inside the document itself.
-     */
-    function hasValidOwnerIdOnCreate(userId) {
-      return request.resource.data.id == userId;
-    }
-
-    /**
-     * On update, ensures that the internal 'id' field of a user document cannot be
-     * changed. This prevents re-assigning ownership of the document.
-     */
-    function isOwnerIdImmutable() {
-      return request.resource.data.id == resource.data.id;
-    }
-
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Collection Rules
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
-     * @description Controls access to the public product catalog. All users, including
-     *              those not signed in, can read product data. Only users with an
-     *              admin role can create, update, or delete products.
-     * @path        /products/{productId}
-     * @allow       (get) Any anonymous user can view a product.
-     * @allow       (create) An authenticated admin can add a new product.
-     * @deny        (update) A standard authenticated user attempts to change a product price.
-     * @principle   Public Read with Role-Based Writes.
+     * @description Controls access to public product data. Products are readable by anyone but can only be created, updated, or deleted by an administrator.
+     * @path /products/{productId}
+     * @allow Any user, signed in or not, can read product details. (e.g., `(get) /products/sofa-xyz`)
+     * @allow An admin can create a new product. (e.g., auth.uid is 'admin_user', `(create) /products/new-chair`)
+     * @deny A regular signed-in user cannot create a product. (e.g., auth.uid is 'customer123', `(create) /products/my-chair`)
+     * @principle "Public Read with Admin-Only Writes" to maintain the integrity of the product catalog while allowing public browsing.
      */
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
 
     /**
-     * @description Secures user profile documents. A user can create, read, update,
-     *              and delete their own profile. Admins have full read and write
-     *              access for moderation. Listing all users is forbidden.
-     * @path        /users/{userId}
-     * @allow       (create) A new user 'user123' can create their own document at /users/user123.
-     * @allow       (get) An admin can read the profile of 'user123'.
-     * @deny        (list) No user, not even an admin, can list all documents in the /users collection.
-     * @deny        (get) User 'user456' attempts to read the profile of 'user123'.
-     * @principle   Enforces document ownership and provides admin override, while preventing user enumeration.
-     */
-    match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if false;
-      allow create: if isOwner(userId) && hasValidOwnerIdOnCreate(userId);
-      allow update: if (isOwner(userId) || isAdmin()) && docExists() && isOwnerIdImmutable();
-      allow delete: if (isOwner(userId) || isAdmin()) && docExists();
-    }
-
-    /**
-     * @description Secures the orders subcollection for each user. Access is limited
-     *              to the user who owns the parent document or an administrator. This
-     *              ensures a user can only ever see their own order history.
-     * @path        /users/{userId}/orders/{orderId}
-     * @allow       (create) User 'user123' can create a new order in their own subcollection.
-     * @allow       (list) User 'user123' can list all of their own past orders.
-     * @deny        (get) User 'user456' attempts to read an order from '/users/user123/orders/orderXYZ'.
-     * @principle   Restricts access to a user's own data tree based on the path.
-     */
-    match /users/{userId}/orders/{orderId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) || isAdmin();
-      allow update, delete: if (isOwner(userId) || isAdmin()) && docExists();
-    }
-
-    /**
-     * @description Manages admin role grants. This collection is intentionally made
-     *              read-only for admins from the client-side to prevent any form of
-     *              privilege escalation attacks. All writes must be performed from a
-     *              trusted server environment or the Firebase Console.
-     * @path        /roles_admin/{userId}
-     * @allow       (get) An admin can check if another user is also an admin.
-     * @deny        (create) An admin attempts to grant another user admin rights from the client application.
-     * @principle   Secures sensitive role data by preventing all client-side modifications.
+     * @description Locks down the admin role collection. This collection must only be managed from a trusted server environment (e.g., Firebase Admin SDK) to prevent client-side privilege escalation.
+     * @path /roles_admin/{userId}
+     * @allow No client-side operations are permitted.
+     * @deny An admin user attempts to read an admin role document. (e.g., auth.uid is 'admin_user', `(get) /roles_admin/admin_user`)
+     * @principle "Least Privilege" by making this collection entirely server-managed and inaccessible from the client.
      */
     match /roles_admin/{userId} {
-      allow get, list: if isAdmin();
+      allow get: if false;
+      allow list: if false;
       allow create: if false;
       allow update: if false;
       allow delete: if false;
+    }
+
+    /**
+     * @description Secures user orders. The document owner can create and read their own orders. Admins can also read orders for support purposes. Orders are immutable after creation.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow A signed-in user 'user123' creates a new order for themselves. (e.g., auth.uid is 'user123', `(create) /users/user123/orders/order_abc`)
+     * @allow An admin reads user 'user123's order. (e.g., auth.uid is 'admin_xyz', `(get) /users/user123/orders/order_abc`)
+     * @deny A user 'user456' tries to read 'user123's order. (e.g., auth.uid is 'user456', `(get) /users/user123/orders/order_abc`)
+     * @deny A user tries to update their own placed order. (e.g., auth.uid is 'user123', `(update) /users/user123/orders/order_abc`)
+     * @principle "Enforces document ownership," with a specific read-only exception for administrative roles and write-once semantics for data integrity.
+     */
+    match /users/{userId}/orders/{orderId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Secures a user's private style profile. Only the owner has any access (read, write, delete). Admins do not have access.
+     * @path /users/{userId}/styleProfiles/{styleProfileId}
+     * @allow A signed-in user 'user123' reads their own style profile. (e.g., auth.uid is 'user123', `(get) /users/user123/styleProfiles/profile_xyz`)
+     * @deny User 'user456' tries to read 'user123's profile. (e.g., auth.uid is 'user456', `(get) /users/user123/styleProfiles/profile_xyz`)
+     * @deny An admin user tries to read 'user123's profile. (e.g., auth.uid is 'admin_xyz', `(get) /users/user123/styleProfiles/profile_xyz`)
+     * @principle "Strict Ownership" to guarantee user privacy for sensitive profile data.
+     */
+    match /users/{userId}/styleProfiles/{styleProfileId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
