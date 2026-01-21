@@ -1,4 +1,5 @@
 
+
 export type Category = {
   id: string;
   name: string;
@@ -55,6 +56,7 @@ export type User = {
   role: 'admin' | 'customer';
 };
 
+// Represents a review in the private moderation collection
 export type Review = {
     id: string;
     userId: string;
@@ -63,4 +65,14 @@ export type Review = {
     message: string;
     status: 'pending' | 'approved' | 'rejected';
     createdAt: Date;
+};
+
+// Represents a review in the public, approved collection
+export type PublicReview = {
+    id: string;
+    name: string;
+    rating: number;
+    message: string;
+    createdAt: Date; // The original submission date
+    approvedAt: Date; // The date it was approved
 };

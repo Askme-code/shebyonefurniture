@@ -86,14 +86,12 @@ service cloud.firestore {
     match /reviews_private/{reviewId} {
 
       // User submits review
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.status == 'pending';
+      allow create: if isValidReviewCreate();
 
-      // User reads their own review
+      // User can read their own reviews, Admin can read any
       allow read: if isAdmin() || isOwner(resource.data.userId);
 
-      // Admin moderation
+      // Admin moderation (update is used for status change)
       allow update, delete: if isAdmin();
     }
 
@@ -116,7 +114,7 @@ service cloud.firestore {
 
       // Read (get + list)
       // Admin: all
-      // User: only their own orders
+      // User: only their own orders (enforced by client-side query)
       allow read: if isAdmin() || isOwner(resource.data.userId);
 
       // Cancel order (user)
@@ -144,8 +142,10 @@ service cloud.firestore {
     // Admin Roles
     // ==============================
     match /roles_admin/{userId} {
-      allow read, write: if isAdmin();
-      allow list: if false;
+      // User can check their own role, admin can check any.
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false; // Disallow listing all admins for security
+      allow write: if isAdmin();
     }
 
     // ==============================
@@ -165,5 +165,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import type { Review } from '@/lib/types';
@@ -153,13 +153,11 @@ export default function ReviewsPage() {
                 ) : (
                     <div className="text-center py-16 border-2 border-dashed rounded-lg">
                         <Star className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h2 className="mt-6 text-xl font-semibold">No Reviews Yet</h2>
-                        <p className="mt-2 text-muted-foreground">When customers submit reviews, they will appear here for moderation.</p>
+                        <h2 className="mt-6 text-xl font-semibold">No Pending Reviews</h2>
+                        <p className="mt-2 text-muted-foreground">When customers submit new reviews, they will appear here for moderation.</p>
                     </div>
                 )}
             </CardContent>
         </Card>
     );
 }
-
-    

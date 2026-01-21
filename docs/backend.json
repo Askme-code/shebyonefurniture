@@ -312,15 +312,9 @@
         "definition": {
           "entityName": "Product",
           "schema": {
-            "$ref": "#/backend/entities/Product"
+            "$ref": "#/entities/Product"
           },
-          "description": "Stores furniture product information. Admin users can create, read, update, and delete products. All users can read products.",
-          "params": [
-            {
-              "name": "productId",
-              "description": "Unique identifier for the product."
-            }
-          ]
+          "description": "Stores furniture product information. Admin users can create, read, update, and delete products. All users can read products."
         }
       },
       {
@@ -328,15 +322,9 @@
         "definition": {
           "entityName": "Order",
           "schema": {
-            "$ref": "#/backend/entities/Order"
+            "$ref": "#/entities/Order"
           },
-          "description": "Stores all customer orders in a single collection. Customers can query for their own orders, while admins can access all orders.",
-          "params": [
-            {
-              "name": "orderId",
-              "description": "Unique identifier for the order."
-            }
-          ]
+          "description": "Stores all customer orders in a single collection. Customers can query for their own orders, while admins can access all orders."
         }
       },
       {
@@ -344,15 +332,9 @@
         "definition": {
           "entityName": "UserProfile",
           "schema": {
-            "$ref": "#/backend/entities/UserProfile"
+            "$ref": "#/entities/UserProfile"
           },
-          "description": "Stores public user profile data. Created on first login. Admins can manage all users, users can only manage their own profile.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "User's auth UID."
-            }
-          ]
+          "description": "Stores public user profile data. Created on first login. Admins can manage all users, users can only manage their own profile."
         }
       },
       {
@@ -360,15 +342,9 @@
         "definition": {
           "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/entities/User"
           },
-          "description": "Collection to store admin user IDs. The existence of a document indicates admin role.  Authorization rules check for the existence of this document to grant admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            }
-          ]
+          "description": "Collection to store admin user IDs. The existence of a document indicates admin role. Authorization rules check for the existence of this document to grant admin privileges."
         }
       },
       {
@@ -376,15 +352,9 @@
         "definition": {
           "entityName": "NewsletterSubscriber",
           "schema": {
-            "$ref": "#/backend/entities/NewsletterSubscriber"
+            "$ref": "#/entities/NewsletterSubscriber"
           },
-          "description": "Stores email addresses of users subscribed to the newsletter. Publicly writable for sign-ups, admin-only readable.",
-          "params": [
-            {
-              "name": "subscriberId",
-              "description": "Unique identifier for the subscription."
-            }
-          ]
+          "description": "Stores email addresses of users subscribed to the newsletter. Publicly writable for sign-ups, admin-only readable."
         }
       },
       {
@@ -392,15 +362,9 @@
         "definition": {
           "entityName": "Message",
           "schema": {
-            "$ref": "#/backend/entities/Message"
+            "$ref": "#/entities/Message"
           },
-          "description": "Stores messages submitted through the contact form. Publicly writable for submissions, admin-only for management.",
-          "params": [
-            {
-              "name": "messageId",
-              "description": "Unique identifier for the message."
-            }
-          ]
+          "description": "Stores messages submitted through the contact form. Publicly writable for submissions, admin-only for management."
         }
       },
       {
@@ -408,15 +372,9 @@
         "definition": {
           "entityName": "Review",
           "schema": {
-            "$ref": "#/backend/entities/Review"
+            "$ref": "#/entities/Review"
           },
-          "description": "Stores customer reviews for moderation. Users can create their own. Admins can read all for moderation. Users can only read their own.",
-          "params": [
-            {
-              "name": "reviewId",
-              "description": "Unique identifier for the review."
-            }
-          ]
+          "description": "Stores customer reviews for moderation. Users can create their own. Admins can read all for moderation. Users can only read their own."
         }
       },
       {
@@ -424,20 +382,11 @@
         "definition": {
           "entityName": "PublicReview",
           "schema": {
-            "$ref": "#/backend/entities/PublicReview"
+            "$ref": "#/entities/PublicReview"
           },
-          "description": "Stores approved customer reviews. Publicly readable by all users. Only writable by admins.",
-          "params": [
-            {
-              "name": "reviewId",
-              "description": "Unique identifier for the review."
-            }
-          ]
+          "description": "Stores approved customer reviews. Publicly readable by all users. Only writable by admins."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a top-level `orders` collection. This structure allows admins to efficiently query all orders for the admin dashboard. Security rules ensure that users can only read/write their own orders (by checking the `userId` field in the order document), while admins have full access. This avoids the limitations of securing collection group queries with `exists()` or `get()` calls to other documents.\n3.  **Users & Roles:** A `/users` collection stores public profile information for all registered users, created automatically on first login. This allows admins to view and manage a list of all application users. A separate `roles_admin` collection manages administrator privileges via an existence check, which is highly performant. Admins can modify the `roles_admin` collection to grant or revoke privileges.\n4.  **Reviews:** A two-collection strategy is used for reviews to ensure security and query performance. New reviews are submitted to `reviews_private`, which is only readable by the user who created it or an admin. When an admin approves a review, it is copied to the `reviews_public` collection, which is world-readable. This separation prevents insecure `list` queries and provides a robust moderation workflow."
+    ]
   }
 }
-
-    

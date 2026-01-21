@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -14,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
-import type { Review } from '@/lib/types';
+import type { PublicReview } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Link from 'next/link';
@@ -27,7 +26,7 @@ const reviewSchema = z.object({
 type ReviewFormValues = z.infer<typeof reviewSchema>;
 
 // Raw type from Firestore
-type RawReview = Omit<Review, 'createdAt' | 'status' | 'userId'> & { createdAt: Timestamp };
+type RawPublicReview = Omit<PublicReview, 'createdAt' | 'approvedAt'> & { createdAt: Timestamp, approvedAt: Timestamp };
 
 export function TestimonialsSection() {
   const firestore = useFirestore();
@@ -45,15 +44,19 @@ export function TestimonialsSection() {
   const reviewsQuery = useMemoFirebase(
     () => firestore ? query(
       collection(firestore, 'reviews_public'),
-      orderBy('createdAt', 'desc')
+      orderBy('approvedAt', 'desc')
     ) : null,
     [firestore]
   );
-  const { data: rawReviews, isLoading } = useCollection<RawReview>(reviewsQuery);
+  const { data: rawReviews, isLoading } = useCollection<RawPublicReview>(reviewsQuery);
 
   const reviews = useMemo(() => {
     if (!rawReviews) return [];
-    return rawReviews.map(r => ({ ...r, createdAt: r.createdAt?.toDate() ?? new Date() } as Review));
+    return rawReviews.map(r => ({ 
+        ...r, 
+        createdAt: r.createdAt?.toDate() ?? new Date(),
+        approvedAt: r.approvedAt?.toDate() ?? new Date(),
+    }));
   }, [rawReviews]);
 
   // Form submission handler
@@ -205,5 +208,3 @@ export function TestimonialsSection() {
     </section>
   );
 }
-
-    
