@@ -1,28 +1,35 @@
 /**
- * # Firestore Security Rules
+ * This ruleset enforces a security model with three primary levels of access:
+ * public, user-owned, and admin. It is designed for an e-commerce platform
+ * where product information is public, user data is private, and administrators
+ * have elevated privileges.
  *
- * ## Core Philosophy
- * This ruleset establishes a clear security boundary between publicly accessible data (the product catalog) and private user-specific data (user profiles and orders). It implements a Database-Based Access Control (DBAC) model where administrative privileges are granted based on the existence of a document in a dedicated `/roles_admin` collection, rather than relying on custom claims.
+ * Core Philosophy:
+ * The security model prioritizes a "default deny" posture. Access is granted
+ * explicitly based on user ownership or a specific administrative role. This ensures
+ * that user data remains private and system integrity is maintained.
  *
- * ## Data Structure
- * The data is organized into three main areas:
- * 1.  `/products/{productId}`: A top-level collection for the public product catalog.
- * 2.  `/users/{userId}`: A top-level collection where each document represents a user and serves as a root for their private data.
- * 3.  `/users/{userId}/orders/{orderId}`: A subcollection containing orders, strictly owned by the parent user.
- * 4.  `/roles_admin/{uid}`: A special, client-inaccessible collection used to designate administrators.
+ * Data Structure:
+ * - /products/{productId}: A public collection for the product catalog.
+ * - /users/{userId}: Private documents for each user's profile information.
+ * - /users/{userId}/orders/{orderId}: A private subcollection for each user's orders,
+ *   ensuring data is segregated by owner.
+ * - /roles_admin/{userId}: A secure, admin-readable collection used as a lookup table.
+ *   The existence of a document in this collection grants a user admin privileges.
  *
- * ## Key Security Decisions
- * - **Public Product Catalog**: All users, authenticated or not, can read the `/products` collection. However, only administrators can modify it.
- * - **Strict User Data Isolation**: Users can only access their own data tree under `/users/{userId}`. They are explicitly forbidden from listing or reading other users' documents, preventing user enumeration.
- * - **Admin Override**: Users designated as admins have read-only access to all user data (`/users` and `/users/{userId}/orders`) for support and moderation purposes. Admins cannot write data on behalf of users to prevent unintended side effects.
- * - **Client-Side Role Management Disabled**: The `/roles_admin` collection is not writable by any client to prevent privilege escalation. It is expected to be managed securely through the Firebase Console or a trusted server environment.
- *
- * ## Denormalization for Authorization
- * To ensure fast and secure rule evaluation, this ruleset relies on denormalization:
- * - **Admin Roles**: Instead of embedding roles in a user document and performing a costly `get()` on every check, admin status is determined by a highly performant `exists()` call to the `/roles_admin/{uid}` path. This makes admin checks cheap and decoupled from the user's profile data.
- *
- * ## Structural Segregation
- * A clear separation is maintained between public and private data. The `/products` collection contains only public information, allowing for safe and efficient public `list` queries. All private user data is stored within the `/users/{userId}` path, ensuring that all queries against it are inherently constrained by user ownership rules.
+ * Key Security Decisions:
+ * - Admin Role Management: Admin status is determined by the existence of a document
+ *   in the /roles_admin collection. This is a performant and secure pattern that avoids
+ *   storing roles on user-modifiable documents. The /roles_admin collection itself is
+ *   read-only from the client to prevent privilege escalation.
+ * - User Privacy: Listing the top-level /users collection is explicitly disallowed
+ *   to protect the privacy of all users on the platform.
+ * - Ownership Model: Data under /users/{userId} is strictly controlled, allowing access
+ *   only to the owning user or an administrator. This is enforced using the {userId}
+ *   wildcard from the document path.
+ * - Public Data: The /products collection is publicly readable by anyone, including
+ *   unauthenticated users, to support catalog browsing. However, all write operations
+ *   (create, update, delete) are restricted to administrators.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -33,35 +40,52 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     /**
-     * Returns true if the user is authenticated.
+     * Verifies that the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Returns true if the authenticated user's UID matches the provided userId.
-     * This is the foundation of the user-ownership model.
+     * Verifies that the authenticated user's UID matches the provided userId,
+     * typically from the document path.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * Returns true if the requesting user is an administrator.
-     * Checks for the existence of a document in the roles_admin collection.
-     * This is a performant check that does not require read access to the document itself.
+     * Checks if the authenticated user has administrative privileges.
+     * This is determined by the existence of a document for their UID in the
+     * /roles_admin collection. This function incurs a read cost.
      */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     /**
-     * Returns true if the document being accessed already exists in Firestore.
-     * CRITICAL for preventing writes to non-existent documents in update/delete operations.
+     * A robust check for update and delete operations, ensuring the document
+     * being modified actually exists in the database.
      */
-    function documentExists() {
+    function docExists() {
       return resource != null;
+    }
+
+    /**
+     * On create, validates that the user document's internal 'id' field matches
+     * the document's ID, which is the user's UID. This establishes the
+     * ownership link securely inside the document itself.
+     */
+    function hasValidOwnerIdOnCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * On update, ensures that the internal 'id' field of a user document cannot be
+     * changed. This prevents re-assigning ownership of the document.
+     */
+    function isOwnerIdImmutable() {
+      return request.resource.data.id == resource.data.id;
     }
 
     // ----------------------------------------------------------------------
@@ -69,60 +93,67 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     /**
-     * @description Controls access to the public product catalog.
-     * @path /products/{productId}
-     * @allow (get) Any user, authenticated or not, can view a product.
-     * @deny (create) An authenticated non-admin user cannot create a new product.
-     * @principle Public read with admin-only writes.
+     * @description Controls access to the public product catalog. All users, including
+     *              those not signed in, can read product data. Only users with an
+     *              admin role can create, update, or delete products.
+     * @path        /products/{productId}
+     * @allow       (get) Any anonymous user can view a product.
+     * @allow       (create) An authenticated admin can add a new product.
+     * @deny        (update) A standard authenticated user attempts to change a product price.
+     * @principle   Public Read with Role-Based Writes.
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && documentExists();
-      allow delete: if isAdmin() && documentExists();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Controls access to a user's own profile document.
-     * @path /users/{userId}
-     * @allow (create) A new user can create their own user document `if request.auth.uid == userId`.
-     * @deny (list) A user cannot list all documents in the `/users` collection to prevent enumeration.
-     * @deny (delete) A user cannot delete their own profile from the client. This should be a backend operation.
-     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     * @description Secures user profile documents. A user can create, read, update,
+     *              and delete their own profile. Admins have full read and write
+     *              access for moderation. Listing all users is forbidden.
+     * @path        /users/{userId}
+     * @allow       (create) A new user 'user123' can create their own document at /users/user123.
+     * @allow       (get) An admin can read the profile of 'user123'.
+     * @deny        (list) No user, not even an admin, can list all documents in the /users collection.
+     * @deny        (get) User 'user456' attempts to read the profile of 'user123'.
+     * @principle   Enforces document ownership and provides admin override, while preventing user enumeration.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && documentExists();
-      allow delete: if false;
+      allow create: if isOwner(userId) && hasValidOwnerIdOnCreate(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && docExists() && isOwnerIdImmutable();
+      allow delete: if (isOwner(userId) || isAdmin()) && docExists();
     }
 
     /**
-     * @description Controls access to a user's private orders.
-     * @path /users/{userId}/orders/{orderId}
-     * @allow (create) An authenticated user can create an order for themselves under their own user path.
-     * @deny (get) A user cannot read orders belonging to another user.
-     * @principle Enforces strict document ownership within a user's data tree.
+     * @description Secures the orders subcollection for each user. Access is limited
+     *              to the user who owns the parent document or an administrator. This
+     *              ensures a user can only ever see their own order history.
+     * @path        /users/{userId}/orders/{orderId}
+     * @allow       (create) User 'user123' can create a new order in their own subcollection.
+     * @allow       (list) User 'user123' can list all of their own past orders.
+     * @deny        (get) User 'user456' attempts to read an order from '/users/user123/orders/orderXYZ'.
+     * @principle   Restricts access to a user's own data tree based on the path.
      */
     match /users/{userId}/orders/{orderId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && documentExists();
-      allow delete: if isOwner(userId) && documentExists();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update, delete: if (isOwner(userId) || isAdmin()) && docExists();
     }
 
     /**
-     * @description Secures the admin role collection.
-     * @path /roles_admin/{uid}
-     * @allow (none) No client-side reads or writes are permitted.
-     * @deny (create) A user cannot make themselves an admin.
-     * @deny (get) A user cannot check if another user is an admin.
-     * @principle Prevents privilege escalation and information leakage by making role management a server-side-only operation.
+     * @description Manages admin role grants. This collection is intentionally made
+     *              read-only for admins from the client-side to prevent any form of
+     *              privilege escalation attacks. All writes must be performed from a
+     *              trusted server environment or the Firebase Console.
+     * @path        /roles_admin/{userId}
+     * @allow       (get) An admin can check if another user is also an admin.
+     * @deny        (create) An admin attempts to grant another user admin rights from the client application.
+     * @principle   Secures sensitive role data by preventing all client-side modifications.
      */
-    match /roles_admin/{uid} {
-      allow get: if false;
-      allow list: if false;
+    match /roles_admin/{userId} {
+      allow get, list: if isAdmin();
       allow create: if false;
       allow update: if false;
       allow delete: if false;

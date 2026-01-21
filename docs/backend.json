@@ -141,20 +141,19 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/products/{productId}",
+        "path": "products/{productId}",
         "definition": {
           "entityName": "Product",
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores product information. Anyone can view products. Only admins can create, edit, or delete products.",
+          "description": "Stores product information. Accessible for viewing by everyone. Only admins can create, edit, or delete products.",
           "params": [
             {
               "name": "productId",
@@ -164,13 +163,13 @@
         }
       },
       {
-        "path": "/users/{userId}",
+        "path": "users/{userId}",
         "definition": {
           "entityName": "User",
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user information, including the user's role. This collection is used for authentication and authorization.",
+          "description": "Stores user profile information. Accessible only by the user and admins.",
           "params": [
             {
               "name": "userId",
@@ -180,13 +179,13 @@
         }
       },
       {
-        "path": "/users/{userId}/orders/{orderId}",
+        "path": "users/{userId}/orders/{orderId}",
         "definition": {
           "entityName": "Order",
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores orders associated with a specific user. Customers can only see their own orders. Admins can view all orders. Includes denormalized 'userId' for authorization independence.",
+          "description": "Stores order information for each user. Accessible only by the user and admins.",
           "params": [
             {
               "name": "userId",
@@ -200,22 +199,22 @@
         }
       },
       {
-        "path": "/roles_admin/{uid}",
+        "path": "roles_admin/{userId}",
         "definition": {
-          "entityName": "role",
+          "entityName": "User",
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Collection to denote admin roles. Document existence signifies admin status.",
+          "description": "Marks a user as an admin. The existence of a document here grants admin privileges.",
           "params": [
             {
-              "name": "uid",
-              "description": "User ID of the admin."
+              "name": "userId",
+              "description": "Unique identifier for the admin user."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, while adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It incorporates denormalization for authorization, structural segregation for homogenous security posture, and standardized access modeling.\n\n1.  **Authorization Independence (Denormalization):** The `orders` subcollection within each user document includes denormalized `userId` field. This allows security rules to validate order ownership without requiring `get()` calls to parent documents.\n2.  **Clarity of Intent:** The structure clearly separates user-owned data (`/users/{userId}/orders/{orderId}`) from globally accessible data (`/products/{productId}`). This separation makes the access rules more intuitive and easier to manage.\n3.  **DBAC (Database-Based Access Control):** User roles (admin/customer) are stored directly in the `/users/{userId}` document. This avoids the need for custom claims, simplifying the authentication process and security rules.\n4.  **QAPs (Rules are not Filters):** The structure enables secure `list` operations. Products can be listed publicly without requiring filtering on the client-side. Admin-only access to all orders is enforced by path-based rules and role checks.\n\n**Specific Implementation Details:**\n\n*   **/products/{productId}:** Stores product information. Anyone can view products. Only admins can create, edit, or delete products.\n*   **/users/{userId}:** Stores user information, including the user's role. This collection is used for authentication and authorization.\n*   **/users/{userId}/orders/{orderId}:** Stores orders associated with a specific user. Customers can only see their own orders. Admins can view all orders.\n*   **/roles_admin/{uid}:** Dedicated collection to denote admin roles by document existence.\n\n**Denormalization Strategy:**\n\nThe `/users/{userId}/orders/{orderId}` path denormalizes the userId into the order document, thus making it possible to validate the user id against request.auth.uid during order creation and retrieval, without having to refer to any parent document using get(). This eliminates hierarchical authorization dependencies, allowing atomic operations and improved security rule debuggability."
+    "reasoning": "The Firestore data structure is designed to support the Shaaban Furniture e-commerce platform, emphasizing security, scalability, and ease of management. It incorporates denormalization to achieve authorization independence and facilitates robust security rules. The structure is segregated to maintain a homogeneous security posture within each collection.\n\nProducts: Products are stored in a top-level `products` collection, allowing for easy listing and filtering. No user-specific data is stored here, so no denormalization is required.\n\nOrders: Orders are stored within a subcollection of `users` ( `/users/{userId}/orders/{orderId}`). This allows customers to only view their own orders. Admin access to all orders will be controlled via a separate `roles_admin` collection.\n\nUsers: User roles are managed through a combination of path-based ownership for user-specific data (orders) and a global `roles_admin` collection. User profiles are stored in the `/users/{userId}` document. The `User` document does NOT contain the role to prevent the need for constant updates and to simplify security rules.  Admin status is checked via the existence of a document with the user's ID in the `roles_admin` collection.\n\nSecurity Rules and QAPs: The structure supports secure `list` operations by segregating data based on ownership (user orders) and administrative roles. Rules will check for the existence of a document in `/roles_admin/{userId}` to grant admin privileges. User orders are secured via path-based rules, ensuring that only the authenticated user (or an admin) can access their orders.\n\nAuthorization Independence: Authorization independence is achieved by avoiding `get()` calls in security rules. Instead, authorization is based on the authenticated user's ID and the document path, or, in the case of admin privileges, the existence of a document in the `roles_admin` collection.  This allows for atomic operations and easier debugging.\n\nThe structure aligns with the core design principles by prioritizing authorization independence, clarity of intent, DBAC, QAPs, and invariants. It leverages structural segregation and access modeling to create a secure and manageable database."
   }
 }
