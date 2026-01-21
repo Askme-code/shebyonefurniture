@@ -1,5 +1,5 @@
 'use client';
-import { useOrders } from '@/hooks/use-orders';
+import { useUserOrders } from '@/hooks/use-user-orders';
 import type { Order } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 
 export default function MyOrdersPage() {
-    const { orders, isLoading: areOrdersLoading } = useOrders();
+    const { orders, isLoading: areOrdersLoading } = useUserOrders();
     const firestore = useFirestore();
     const { toast } = useToast();
 

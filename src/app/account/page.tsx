@@ -1,6 +1,6 @@
 'use client';
 import { useUser } from '@/firebase';
-import { useOrders } from '@/hooks/use-orders';
+import { useUserOrders } from '@/hooks/use-user-orders';
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 
 export default function AccountDashboardPage() {
     const { user } = useUser();
-    const { orders: allOrders, isLoading: areOrdersLoading } = useOrders();
+    const { orders: allOrders, isLoading: areOrdersLoading } = useUserOrders();
     
     const orders = useMemo(() => {
         return allOrders.slice(0, 5);

@@ -42,13 +42,13 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { useOrders } from '@/hooks/use-orders';
+import { useAllOrders } from '@/hooks/use-all-orders';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { doc } from 'firebase/firestore';
 
 export default function OrdersPage() {
-    const { orders, isLoading } = useOrders();
+    const { orders, isLoading } = useAllOrders();
     const firestore = useFirestore();
     const { toast } = useToast();
 

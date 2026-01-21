@@ -27,12 +27,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useOrders } from '@/hooks/use-orders';
+import { useAllOrders } from '@/hooks/use-all-orders';
 import { useProducts } from '@/hooks/use-products';
 
 
 export default function Dashboard() {
-    const { orders, isLoading: isLoadingOrders } = useOrders();
+    const { orders, isLoading: isLoadingOrders } = useAllOrders();
     const { products, isLoading: isLoadingProducts } = useProducts();
 
     const totalRevenue = orders.reduce((sum, order) => order.status === 'Delivered' ? sum + order.total : sum, 0);

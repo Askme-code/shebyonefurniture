@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { File, Lightbulb } from 'lucide-react';
-import { useOrders } from '@/hooks/use-orders';
+import { useAllOrders } from '@/hooks/use-all-orders';
 import { useProducts } from '@/hooks/use-products';
 import { getCategories } from '@/lib/data';
 import { generateReportInsights } from '@/ai/flows/generate-report-insights';
@@ -76,7 +76,7 @@ const chartConfig: ChartConfig = {
 };
 
 export default function ReportsPage() {
-  const { orders, isLoading: isLoadingOrders } = useOrders();
+  const { orders, isLoading: isLoadingOrders } = useAllOrders();
   const { getProductById, isLoading: isLoadingProducts } = useProducts();
   const categories = useMemo(() => getCategories(), []);
 
