@@ -1,3 +1,4 @@
+
 export type Category = {
   id: string;
   name: string;
@@ -57,9 +58,9 @@ export type User = {
 export type Review = {
     id: string;
     userId: string;
-    userName: string;
+    name: string;
     rating: number;
-    comment: string;
+    message: string;
     status: 'pending' | 'approved' | 'rejected';
     createdAt: Date;
 };

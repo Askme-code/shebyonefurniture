@@ -22,7 +22,7 @@ import Link from 'next/link';
 // Schema for the review form
 const reviewSchema = z.object({
   rating: z.number().min(1, "Please provide a rating.").max(5),
-  comment: z.string().min(10, "Comment must be at least 10 characters"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
 });
 type ReviewFormValues = z.infer<typeof reviewSchema>;
 
@@ -38,7 +38,7 @@ export function TestimonialsSection() {
 
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
-    defaultValues: { rating: 0, comment: "" },
+    defaultValues: { rating: 0, message: "" },
   });
 
   // Fetch approved reviews
@@ -71,9 +71,10 @@ export function TestimonialsSection() {
 
     const reviewsCollection = collection(firestore, 'reviews');
     addDocumentNonBlocking(reviewsCollection, {
-      ...data,
       userId: user.uid,
-      userName: user.displayName || user.email || 'Anonymous User',
+      name: user.displayName || user.email || 'Anonymous User',
+      rating: data.rating,
+      message: data.message,
       status: 'pending',
       createdAt: serverTimestamp(),
     });
@@ -119,9 +120,9 @@ export function TestimonialsSection() {
                                                         <Star key={i} className={cn("h-5 w-5", i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground')} />
                                                     ))}
                                                 </div>
-                                                <p className="text-muted-foreground italic">"{review.comment}"</p>
+                                                <p className="text-muted-foreground italic">"{review.message}"</p>
                                             </div>
-                                            <p className="mt-4 font-bold font-headline text-lg">- {review.userName}</p>
+                                            <p className="mt-4 font-bold font-headline text-lg">- {review.name}</p>
                                         </Card>
                                     </div>
                                 </CarouselItem>
@@ -178,7 +179,7 @@ export function TestimonialsSection() {
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="comment"
+                                    name="message"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Your Review</FormLabel>

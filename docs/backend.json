@@ -249,7 +249,7 @@
             "type": "string",
             "description": "The ID of the user who wrote the review."
         },
-        "userName": {
+        "name": {
           "type": "string",
           "description": "Name of the person who wrote the review."
         },
@@ -257,7 +257,7 @@
           "type": "number",
           "description": "Star rating from 1 to 5."
         },
-        "comment": {
+        "message": {
           "type": "string",
           "description": "The content of the review."
         },
@@ -277,10 +277,11 @@
         }
       },
       "required": [
+        "id",
         "userId",
-        "userName",
+        "name",
         "rating",
-        "comment",
+        "message",
         "status",
         "createdAt"
       ]
