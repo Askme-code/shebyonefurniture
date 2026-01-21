@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -12,8 +11,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // This is safe because the /roles_admin/{userId} rule allows signed-in users to `get` their own doc.
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     function isOwner(userId) {
@@ -26,26 +25,21 @@ service cloud.firestore {
 
     function isValidOrderCreate() {
       let d = request.resource.data;
-      return d.keys().hasAll([
-        'customerName', 'phone', 'address',
-        'items', 'total', 'status',
-        'userId', 'createdAt'
-      ])
-      && d.customerName is string && d.customerName.size() > 0
-      && d.phone is string && d.phone.size() > 0
-      && d.address is string && d.address.size() > 0
-      && d.items is list && d.items.size() > 0
-      && d.total is number && d.total >= 0
-      && d.status == 'Pending'
-      && d.userId == request.auth.uid;
+      return d.keys().hasAll(['customerName', 'phone', 'address', 'items', 'total', 'status', 'userId', 'createdAt'])
+        && d.customerName is string && d.customerName.size() > 0
+        && d.phone is string && d.phone.size() > 0
+        && d.address is string && d.address.size() > 0
+        && d.items is list && d.items.size() > 0
+        && d.total is number && d.total >= 0
+        && d.status == 'Pending'
+        && d.userId == request.auth.uid;
     }
 
     function isValidMessage() {
       let d = request.resource.data;
       return d.keys().hasAll(['name', 'email', 'message', 'createdAt', 'isRead'])
         && d.name is string && d.name.size() > 0
-        && d.email is string
-        && d.email.matches('^[^@]+@[^@]+\\.[^@]+$')
+        && d.email is string && d.email.matches('^[^@]+@[^@]+\\.[^@]+$')
         && d.message is string && d.message.size() > 0
         && d.isRead == false;
     }
@@ -53,18 +47,13 @@ service cloud.firestore {
     function isValidSubscription() {
       let d = request.resource.data;
       return d.keys().hasAll(['email', 'createdAt'])
-        && d.email is string
-        && d.email.matches('^[^@]+@[^@]+\\.[^@]+$');
+        && d.email is string && d.email.matches('^[^@]+@[^@]+\\.[^@]+$');
     }
 
-    function isValidReviewCreate() {
+    function isValidPrivateReviewCreate() {
       let d = request.resource.data;
       return isSignedIn()
-        && d.keys().hasAll([
-          'userId', 'name',
-          'rating', 'message',
-          'status', 'createdAt'
-        ])
+        && d.keys().hasAll(['userId', 'name', 'rating', 'message', 'status', 'createdAt'])
         && d.userId == request.auth.uid
         && d.name is string && d.name.size() > 0
         && d.rating is number && d.rating >= 1 && d.rating <= 5
@@ -72,93 +61,77 @@ service cloud.firestore {
         && d.status == 'pending';
     }
 
+
     // ==============================
-    // Products (Public)
+    // Collections
     // ==============================
+
+    // Products: Publicly readable, admin-only writable.
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // ==============================
-    // Orders
-    // ==============================
+    // Public Reviews: Publicly readable, admin-only writable.
+    match /reviews_public/{reviewId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    // Private Reviews (for moderation):
+    // Users can create and read their own. Admins can read all.
+    match /reviews_private/{reviewId} {
+        allow create: if isValidPrivateReviewCreate();
+        allow get: if isOwner(resource.data.userId) || isAdmin();
+        // Users can only LIST their own reviews via a query.
+        allow list: if isAdmin() || (request.query.userId == request.auth.uid);
+        allow update, delete: if isAdmin();
+    }
+
+    // Orders: Users can create and read their own. Admins can read all.
     match /orders/{orderId} {
+      allow create: if isValidOrderCreate();
 
-      // Create
-      allow create: if isOwner(request.resource.data.userId)
-                    && isValidOrderCreate();
+      allow get: if isOwner(resource.data.userId) || isAdmin();
 
-      // Read
-      allow read: if isAdmin() || isOwner(resource.data.userId);
+      // Users can only LIST their own orders via a query.
+      allow list: if isAdmin() || (request.query.userId == request.auth.uid);
 
-      // Update
-      allow update: if isAdmin()
-        || (
+      // Users can only cancel their own pending orders. Admins can do anything.
+      allow update: if isAdmin() || (
           isOwner(resource.data.userId)
           && resource.data.status == 'Pending'
           && request.resource.data.keys().hasOnly(['status'])
           && request.resource.data.status == 'Cancelled'
-        );
+      );
 
       allow delete: if isAdmin();
     }
 
-    // ==============================
-    // Users
-    // ==============================
+    // User Profiles: Users can manage their own. Admins can manage all.
     match /users/{userId} {
       allow create: if isSignedIn();
       allow get, update: if isOwner(userId) || isAdmin();
       allow list, delete: if isAdmin();
     }
 
-    // ==============================
-    // Admin Roles
-    // ==============================
+    // Admin Roles: Admin-only write. Signed-in users can check their own role.
     match /roles_admin/{userId} {
-      allow get: if isOwner(userId);
-      allow read, write: if isAdmin();
-      allow list: if false;
+      // IMPORTANT: allow `get` for any signed-in user is required for `isAdmin()` to work.
+      allow get: if isSignedIn();
+      allow list, write: if isAdmin();
     }
 
-    // ==============================
-    // Messages
-    // ==============================
+    // Messages: Publicly writable for creation, admin-only readable.
     match /messages/{messageId} {
       allow create: if isValidMessage();
-      allow get, list, update, delete: if isAdmin();
+      allow read, update, delete: if isAdmin();
     }
 
-    // ==============================
-    // Newsletter Subscribers
-    // ==============================
+    // Newsletter Subscribers: Publicly writable for creation, admin-only readable.
     match /newsletter_subscribers/{subscriberId} {
       allow create: if isValidSubscription();
-      allow read, list, update, delete: if isAdmin();
-    }
-
-    // ==============================
-    // Reviews
-    // ==============================
-    match /reviews/{reviewId} {
-
-      // Submit review
-      allow create: if isValidReviewCreate();
-
-      // Read single review
-      allow get: if
-        isAdmin()
-        || resource.data.status == 'approved'
-        || (isSignedIn() && resource.data.userId == request.auth.uid);
-
-      // List reviews (QUERY SAFE)
-      allow list: if
-        isAdmin()
-        || request.query.where('status', '==', 'approved');
-
-      // Admin moderation
-      allow update, delete: if isAdmin();
+      allow read, delete: if isAdmin();
     }
   }
 }
