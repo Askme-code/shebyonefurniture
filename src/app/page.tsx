@@ -49,14 +49,14 @@ export default function Home() {
         {/* Featured Products Section */}
         <FeaturedProducts />
 
-        {/* Testimonials Section */}
-        <TestimonialsSection />
-
         {/* Our Services Section */}
         <OurServices />
 
         {/* Product Gallery Section */}
         <ProductGallery />
+
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
         {/* Promotion Section */}
         <section className="py-16 sm:py-24 bg-background">
