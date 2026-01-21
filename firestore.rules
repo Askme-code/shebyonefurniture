@@ -81,13 +81,10 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
       
-      // Admins can get any order. Users can only get their own.
       allow get: if isAdmin() || isOwner(resource.data.userId);
       
-      // Only admins can list all orders. User queries are checked against 'get' rules.
-      allow list: if isAdmin();
+      allow list: if isAdmin() || (isSignedIn() && request.query.where.get('userId')[2] == request.auth.uid);
 
-      // Admins can update anything. Users can only cancel their own pending orders.
       allow update: if isAdmin() || (
           isOwner(resource.data.userId)
           && resource.data.status == 'Pending'
@@ -111,8 +108,6 @@ service cloud.firestore {
     // Admin Roles
     // ==============================
     match /roles_admin/{userId} {
-      // An admin can see the role list. A user can only check their own role.
-      // This prevents a circular dependency where isAdmin() can't be checked.
       allow get: if isOwner(userId) || isAdmin();
       allow list, write: if isAdmin();
     }
