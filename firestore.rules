@@ -1,145 +1,131 @@
+/**
+ * # Firestore Security Rules
+ *
+ * ## Core Philosophy
+ * This ruleset establishes a clear security boundary between publicly accessible data (the product catalog) and private user-specific data (user profiles and orders). It implements a Database-Based Access Control (DBAC) model where administrative privileges are granted based on the existence of a document in a dedicated `/roles_admin` collection, rather than relying on custom claims.
+ *
+ * ## Data Structure
+ * The data is organized into three main areas:
+ * 1.  `/products/{productId}`: A top-level collection for the public product catalog.
+ * 2.  `/users/{userId}`: A top-level collection where each document represents a user and serves as a root for their private data.
+ * 3.  `/users/{userId}/orders/{orderId}`: A subcollection containing orders, strictly owned by the parent user.
+ * 4.  `/roles_admin/{uid}`: A special, client-inaccessible collection used to designate administrators.
+ *
+ * ## Key Security Decisions
+ * - **Public Product Catalog**: All users, authenticated or not, can read the `/products` collection. However, only administrators can modify it.
+ * - **Strict User Data Isolation**: Users can only access their own data tree under `/users/{userId}`. They are explicitly forbidden from listing or reading other users' documents, preventing user enumeration.
+ * - **Admin Override**: Users designated as admins have read-only access to all user data (`/users` and `/users/{userId}/orders`) for support and moderation purposes. Admins cannot write data on behalf of users to prevent unintended side effects.
+ * - **Client-Side Role Management Disabled**: The `/roles_admin` collection is not writable by any client to prevent privilege escalation. It is expected to be managed securely through the Firebase Console or a trusted server environment.
+ *
+ * ## Denormalization for Authorization
+ * To ensure fast and secure rule evaluation, this ruleset relies on denormalization:
+ * - **Admin Roles**: Instead of embedding roles in a user document and performing a costly `get()` on every check, admin status is determined by a highly performant `exists()` call to the `/roles_admin/{uid}` path. This makes admin checks cheap and decoupled from the user's profile data.
+ *
+ * ## Structural Segregation
+ * A clear separation is maintained between public and private data. The `/products` collection contains only public information, allowing for safe and efficient public `list` queries. All private user data is stored within the `/users/{userId}` path, ensuring that all queries against it are inherently constrained by user ownership rules.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ==============================
+    // ----------------------------------------------------------------------
     // Helper Functions
-    // ==============================
+    // ----------------------------------------------------------------------
 
+    /**
+     * Returns true if the user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
+    /**
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
+     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // ==============================
-    // Validators
-    // ==============================
-
-    function isValidOrderCreate() {
-      let d = request.resource.data;
-      return d.keys().hasAll([
-        'customerName', 'phone', 'address',
-        'items', 'total', 'status',
-        'userId', 'createdAt'
-      ])
-      && d.customerName is string && d.customerName.size() > 0
-      && d.phone is string && d.phone.size() > 0
-      && d.address is string && d.address.size() > 0
-      && d.items is list && d.items.size() > 0
-      && d.total is number && d.total >= 0
-      && d.status == 'Pending'
-      && d.userId == request.auth.uid;
+    /**
+     * Returns true if the requesting user is an administrator.
+     * Checks for the existence of a document in the roles_admin collection.
+     * This is a performant check that does not require read access to the document itself.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    function isValidMessage() {
-      let d = request.resource.data;
-      return d.keys().hasAll(['name', 'email', 'message', 'createdAt', 'isRead'])
-        && d.name is string && d.name.size() > 0
-        && d.email is string
-        && d.email.matches('^[^@]+@[^@]+\\.[^@]+$')
-        && d.message is string && d.message.size() > 0
-        && d.isRead == false;
+    /**
+     * Returns true if the document being accessed already exists in Firestore.
+     * CRITICAL for preventing writes to non-existent documents in update/delete operations.
+     */
+    function documentExists() {
+      return resource != null;
     }
 
-    function isValidSubscription() {
-      let d = request.resource.data;
-      return d.keys().hasAll(['email', 'createdAt'])
-        && d.email is string
-        && d.email.matches('^[^@]+@[^@]+\\.[^@]+$');
-    }
-    
-    function isValidPrivateReviewCreate() {
-      let d = request.resource.data;
-      return isSignedIn()
-        && d.keys().hasAll(['userId', 'name', 'rating', 'message', 'status', 'createdAt'])
-        && d.userId == request.auth.uid
-        && d.name is string && d.name.size() > 0
-        && d.rating is number && d.rating >= 1 && d.rating <= 5
-        && d.message is string && d.message.size() >= 10
-        && d.status == 'pending';
-    }
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
 
-    // ==============================
-    // Products (Public)
-    // ==============================
+    /**
+     * @description Controls access to the public product catalog.
+     * @path /products/{productId}
+     * @allow (get) Any user, authenticated or not, can view a product.
+     * @deny (create) An authenticated non-admin user cannot create a new product.
+     * @principle Public read with admin-only writes.
+     */
     match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && documentExists();
+      allow delete: if isAdmin() && documentExists();
     }
 
-    // ==============================
-    // Orders
-    // ==============================
-    match /orders/{orderId} {
-      allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
-      
-      allow get: if isAdmin() || isOwner(resource.data.userId);
-      
-      allow list: if isAdmin() || (isSignedIn() && request.query.where.get('userId')[2] == request.auth.uid);
-
-      allow update: if isAdmin() || (
-          isOwner(resource.data.userId)
-          && resource.data.status == 'Pending'
-          && request.resource.data.keys().hasOnly(['status'])
-          && request.resource.data.status == 'Cancelled'
-      );
-      
-      allow delete: if isAdmin();
-    }
-
-    // ==============================
-    // Users
-    // ==============================
+    /**
+     * @description Controls access to a user's own profile document.
+     * @path /users/{userId}
+     * @allow (create) A new user can create their own user document `if request.auth.uid == userId`.
+     * @deny (list) A user cannot list all documents in the `/users` collection to prevent enumeration.
+     * @deny (delete) A user cannot delete their own profile from the client. This should be a backend operation.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
     match /users/{userId} {
-      allow create: if isSignedIn();
-      allow get, update: if isOwner(userId) || isAdmin();
-      allow list, delete: if isAdmin();
-    }
-
-    // ==============================
-    // Admin Roles
-    // ==============================
-    match /roles_admin/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list, write: if isAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && documentExists();
+      allow delete: if false;
     }
 
-    // ==============================
-    // Messages
-    // ==============================
-    match /messages/{messageId} {
-      allow create: if isValidMessage();
-      allow read, update, delete: if isAdmin();
+    /**
+     * @description Controls access to a user's private orders.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow (create) An authenticated user can create an order for themselves under their own user path.
+     * @deny (get) A user cannot read orders belonging to another user.
+     * @principle Enforces strict document ownership within a user's data tree.
+     */
+    match /users/{userId}/orders/{orderId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && documentExists();
+      allow delete: if isOwner(userId) && documentExists();
     }
 
-    // ==============================
-    // Newsletter Subscribers
-    // ==============================
-    match /newsletter_subscribers/{subscriberId} {
-      allow create: if isValidSubscription();
-      allow read, delete: if isAdmin();
-    }
-    
-    // ==============================
-    // Public & Private Reviews
-    // ==============================
-    match /reviews_public/{reviewId} {
-        allow get, list: if true;
-        allow create, update, delete: if isAdmin();
-    }
-
-    match /reviews_private/{reviewId} {
-        allow create: if isValidPrivateReviewCreate();
-        allow read: if isOwner(resource.data.userId) || isAdmin();
-        allow update, delete: if isAdmin();
+    /**
+     * @description Secures the admin role collection.
+     * @path /roles_admin/{uid}
+     * @allow (none) No client-side reads or writes are permitted.
+     * @deny (create) A user cannot make themselves an admin.
+     * @deny (get) A user cannot check if another user is an admin.
+     * @principle Prevents privilege escalation and information leakage by making role management a server-side-only operation.
+     */
+    match /roles_admin/{uid} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

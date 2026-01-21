@@ -1,57 +1,61 @@
-
 {
   "entities": {
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents a furniture product in the catalog.",
+      "description": "Represents a furniture product in the Shaaban Furniture catalog.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
         "name": {
           "type": "string",
-          "description": "Name of the product."
+          "description": "The name of the product."
         },
         "price": {
           "type": "number",
-          "description": "Price of the product."
+          "description": "The price of the product."
         },
         "description": {
           "type": "string",
-          "description": "Detailed description of the product."
+          "description": "A detailed description of the product."
         },
         "category": {
           "type": "string",
-          "description": "Category the product belongs to (e.g., Bed, Sofa, Table)."
+          "description": "The category the product belongs to (e.g., Beds, Sofas, Chairs)."
         },
         "images": {
           "type": "array",
-          "description": "Array of URLs pointing to product images stored in Firebase Storage.",
+          "description": "An array of URLs pointing to the product's images in Firebase Storage.",
           "items": {
             "type": "string"
           }
         },
         "stock": {
           "type": "number",
-          "description": "Number of units currently in stock."
+          "description": "The number of units of the product currently in stock."
         },
-        "isFeatured": {
+        "featured": {
           "type": "boolean",
-          "description": "Indicates whether the product is featured on the homepage."
+          "description": "Indicates whether the product is featured or not."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp indicating when the product was added to the catalog.",
+          "description": "The date and time when the product was created.",
           "format": "date-time"
         }
       },
       "required": [
+        "id",
         "name",
         "price",
         "description",
         "category",
         "images",
         "stock",
-        "isFeatured",
+        "featured",
         "createdAt"
       ]
     },
@@ -61,248 +65,83 @@
       "type": "object",
       "description": "Represents a customer order.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Order entity."
+        },
         "customerName": {
           "type": "string",
-          "description": "Name of the customer who placed the order."
+          "description": "The name of the customer who placed the order."
         },
         "phone": {
           "type": "string",
-          "description": "Phone number of the customer."
+          "description": "The customer's phone number."
         },
         "address": {
           "type": "string",
-          "description": "Shipping address for the order."
+          "description": "The customer's shipping address."
         },
         "items": {
           "type": "array",
-          "description": "Array of product IDs and quantities in the order.",
+          "description": "An array of product IDs and quantities in the order.",
           "items": {
             "type": "string"
           }
         },
         "total": {
           "type": "number",
-          "description": "Total price of the order."
+          "description": "The total price of the order."
         },
         "status": {
           "type": "string",
-          "description": "Current status of the order (e.g., Pending, Processing, Delivered)."
+          "description": "The status of the order (e.g., Pending, Processing, Delivered)."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp indicating when the order was placed.",
+          "description": "The date and time when the order was created.",
           "format": "date-time"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Order)"
         }
       },
       "required": [
+        "id",
         "customerName",
         "phone",
         "address",
         "items",
         "total",
         "status",
-        "createdAt",
-        "userId"
+        "createdAt"
       ]
     },
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the application (admin or customer).",
+      "description": "Represents a user of the Shaaban Furniture platform.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
         "role": {
           "type": "string",
-          "description": "Role of the user (admin or customer)."
+          "description": "The user's role (e.g., admin, customer)."
+        },
+        "styleProfile": {
+          "type": "string",
+          "description": "Style profile of the user. Used for personalized recommendations."
         }
       },
       "required": [
+        "id",
         "role"
-      ]
-    },
-    "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user's public profile data.",
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's email address."
-        },
-        "displayName": {
-          "type": "string",
-          "description": "The user's display name."
-        },
-        "photoURL": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL of the user's profile picture."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the user account was first created in Firestore."
-        },
-        "lastLoginAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the user's last login."
-        }
-      },
-      "required": [
-        "email"
-      ]
-    },
-    "NewsletterSubscriber": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Newsletter Subscriber",
-      "type": "object",
-      "description": "Represents a user who has subscribed to the newsletter.",
-      "properties": {
-        "email": {
-          "type": "string",
-          "description": "Email address of the subscriber.",
-          "format": "email"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the user subscribed.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "email",
-        "createdAt"
-      ]
-    },
-    "Message": {
-      "title": "Message",
-      "description": "Represents a message sent from the contact form.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Name of the person sending the message."
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "Email of the sender."
-        },
-        "message": {
-          "type": "string",
-          "description": "The content of the message."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the message was sent."
-        },
-        "isRead": {
-          "type": "boolean",
-          "description": "Indicates if the message has been read by an admin."
-        }
-      },
-      "required": [
-        "name",
-        "email",
-        "message",
-        "createdAt",
-        "isRead"
-      ]
-    },
-    "Review": {
-      "title": "Review",
-      "description": "Represents a customer review or testimonial, stored privately for moderation.",
-      "type": "object",
-      "properties": {
-        "userId": {
-            "type": "string",
-            "description": "The ID of the user who wrote the review."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the person who wrote the review."
-        },
-        "rating": {
-          "type": "number",
-          "description": "Star rating from 1 to 5."
-        },
-        "message": {
-          "type": "string",
-          "description": "The content of the review."
-        },
-        "status": {
-          "type": "string",
-          "description": "The moderation status of the review.",
-          "enum": [
-            "pending",
-            "approved",
-            "rejected"
-          ]
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the review was submitted."
-        }
-      },
-      "required": [
-        "userId",
-        "name",
-        "rating",
-        "message",
-        "status",
-        "createdAt"
-      ]
-    },
-     "PublicReview": {
-      "title": "Public Review",
-      "description": "Represents a customer review that has been approved and is publicly visible.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Name of the person who wrote the review."
-        },
-        "rating": {
-          "type": "number",
-          "description": "Star rating from 1 to 5."
-        },
-        "message": {
-          "type": "string",
-          "description": "The content of the review."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the review was originally submitted."
-        },
-        "approvedAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the review was approved by an admin."
-        }
-      },
-      "required": [
-        "name",
-        "rating",
-        "message",
-        "createdAt",
-        "approvedAt"
       ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
@@ -312,81 +151,70 @@
         "definition": {
           "entityName": "Product",
           "schema": {
-            "$ref": "#/entities/Product"
+            "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores furniture product information. Admin users can create, read, update, and delete products. All users can read products."
-        }
-      },
-      {
-        "path": "/orders/{orderId}",
-        "definition": {
-          "entityName": "Order",
-          "schema": {
-            "$ref": "#/entities/Order"
-          },
-          "description": "Stores all customer orders in a single collection. Customers can query for their own orders, while admins can access all orders."
+          "description": "Stores product information. Anyone can view products. Only admins can create, edit, or delete products.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
         }
       },
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/entities/UserProfile"
-          },
-          "description": "Stores public user profile data. Created on first login. Admins can manage all users, users can only manage their own profile."
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
           "entityName": "User",
           "schema": {
-            "$ref": "#/entities/User"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Collection to store admin user IDs. The existence of a document indicates admin role. Authorization rules check for the existence of this document to grant admin privileges."
+          "description": "Stores user information, including the user's role. This collection is used for authentication and authorization.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
         }
       },
       {
-        "path": "/newsletter_subscribers/{subscriberId}",
+        "path": "/users/{userId}/orders/{orderId}",
         "definition": {
-          "entityName": "NewsletterSubscriber",
+          "entityName": "Order",
           "schema": {
-            "$ref": "#/entities/NewsletterSubscriber"
+            "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores email addresses of users subscribed to the newsletter. Publicly writable for sign-ups, admin-only readable."
+          "description": "Stores orders associated with a specific user. Customers can only see their own orders. Admins can view all orders. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
         }
       },
       {
-        "path": "/messages/{messageId}",
+        "path": "/roles_admin/{uid}",
         "definition": {
-          "entityName": "Message",
+          "entityName": "role",
           "schema": {
-            "$ref": "#/entities/Message"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores messages submitted through the contact form. Publicly writable for submissions, admin-only for management."
-        }
-      },
-      {
-        "path": "/reviews_private/{reviewId}",
-        "definition": {
-          "entityName": "Review",
-          "schema": {
-            "$ref": "#/entities/Review"
-          },
-          "description": "Stores customer reviews for moderation. Users can create their own. Admins can read all for moderation. Users can only read their own."
-        }
-      },
-      {
-        "path": "/reviews_public/{reviewId}",
-        "definition": {
-          "entityName": "PublicReview",
-          "schema": {
-            "$ref": "#/entities/PublicReview"
-          },
-          "description": "Stores approved customer reviews. Publicly readable by all users. Only writable by admins."
+          "description": "Collection to denote admin roles. Document existence signifies admin status.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "User ID of the admin."
+            }
+          ]
         }
       }
-    ]
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, while adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It incorporates denormalization for authorization, structural segregation for homogenous security posture, and standardized access modeling.\n\n1.  **Authorization Independence (Denormalization):** The `orders` subcollection within each user document includes denormalized `userId` field. This allows security rules to validate order ownership without requiring `get()` calls to parent documents.\n2.  **Clarity of Intent:** The structure clearly separates user-owned data (`/users/{userId}/orders/{orderId}`) from globally accessible data (`/products/{productId}`). This separation makes the access rules more intuitive and easier to manage.\n3.  **DBAC (Database-Based Access Control):** User roles (admin/customer) are stored directly in the `/users/{userId}` document. This avoids the need for custom claims, simplifying the authentication process and security rules.\n4.  **QAPs (Rules are not Filters):** The structure enables secure `list` operations. Products can be listed publicly without requiring filtering on the client-side. Admin-only access to all orders is enforced by path-based rules and role checks.\n\n**Specific Implementation Details:**\n\n*   **/products/{productId}:** Stores product information. Anyone can view products. Only admins can create, edit, or delete products.\n*   **/users/{userId}:** Stores user information, including the user's role. This collection is used for authentication and authorization.\n*   **/users/{userId}/orders/{orderId}:** Stores orders associated with a specific user. Customers can only see their own orders. Admins can view all orders.\n*   **/roles_admin/{uid}:** Dedicated collection to denote admin roles by document existence.\n\n**Denormalization Strategy:**\n\nThe `/users/{userId}/orders/{orderId}` path denormalizes the userId into the order document, thus making it possible to validate the user id against request.auth.uid during order creation and retrieval, without having to refer to any parent document using get(). This eliminates hierarchical authorization dependencies, allowing atomic operations and improved security rule debuggability."
   }
 }
