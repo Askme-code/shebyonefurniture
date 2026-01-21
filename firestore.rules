@@ -71,6 +71,31 @@ service cloud.firestore {
         && d.message is string && d.message.size() >= 10
         && d.status == 'pending';
     }
+    
+    // ==============================
+    // PUBLIC REVIEWS (SAFE)
+    // ==============================
+    match /reviews_public/{reviewId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ==============================
+    // PRIVATE REVIEWS
+    // ==============================
+    match /reviews_private/{reviewId} {
+
+      // User submits review
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      // User reads their own review
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+
+      // Admin moderation
+      allow update, delete: if isAdmin();
+    }
 
     // ==============================
     // Products (Public)
@@ -119,7 +144,6 @@ service cloud.firestore {
     // Admin Roles
     // ==============================
     match /roles_admin/{userId} {
-      allow get: if isOwner(userId);
       allow read, write: if isAdmin();
       allow list: if false;
     }
@@ -139,21 +163,7 @@ service cloud.firestore {
       allow create: if isValidSubscription();
       allow read, list, update, delete: if isAdmin();
     }
-
-    // ==============================
-    // Reviews
-    // ==============================
-    match /reviews/{reviewId} {
-
-      // Users submit reviews
-      allow create: if isValidReviewCreate();
-
-      // Public can read approved reviews
-      // Admin can read all
-      allow read: if resource.data.status == 'approved' || isAdmin();
-
-      // Admin moderation
-      allow update, delete: if isAdmin();
-    }
   }
 }
+
+    

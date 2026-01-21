@@ -1,8 +1,8 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, Timestamp } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import type { Review } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,8 +19,9 @@ export default function ReviewsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    // Fetch reviews from the private moderation collection
     const reviewsQuery = useMemoFirebase(
-        () => firestore ? query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc')) : null,
+        () => firestore ? query(collection(firestore, 'reviews_private'), orderBy('createdAt', 'desc')) : null,
         [firestore]
     );
 
@@ -31,24 +32,36 @@ export default function ReviewsPage() {
         return rawReviews.map(r => ({ ...r, createdAt: r.createdAt?.toDate() ?? new Date() }));
     }, [rawReviews]);
 
-    const handleUpdateStatus = (reviewId: string, status: Review['status']) => {
-        if (!firestore) return;
-        const reviewRef = doc(firestore, 'reviews', reviewId);
-        updateDocumentNonBlocking(reviewRef, { status });
-        toast({
-            title: 'Review Updated',
-            description: `The review has been ${status}.`,
-        });
-    };
-    
+    // Handle review deletion (for both "reject" and "delete")
     const handleDeleteReview = (reviewId: string) => {
         if (!firestore) return;
-        const reviewRef = doc(firestore, 'reviews', reviewId);
+        const reviewRef = doc(firestore, 'reviews_private', reviewId);
         deleteDocumentNonBlocking(reviewRef);
+    };
+
+    // Handle review approval
+    const handleApproveReview = (review: Review) => {
+        if (!firestore) return;
+        
+        const privateRef = doc(firestore, 'reviews_private', review.id);
+        const publicRef = doc(firestore, 'reviews_public', review.id);
+
+        const publicData = {
+            name: review.name,
+            rating: review.rating,
+            message: review.message,
+            createdAt: review.createdAt, // Preserve original creation date
+            approvedAt: serverTimestamp(),
+        };
+
+        // 1. Create the public-facing review
+        setDocumentNonBlocking(publicRef, publicData, {});
+        // 2. Delete the private moderation review
+        deleteDocumentNonBlocking(privateRef);
+
         toast({
-            title: 'Review Deleted',
-            description: 'The review has been permanently removed.',
-            variant: 'destructive',
+            title: 'Review Approved',
+            description: 'The review is now public.',
         });
     };
 
@@ -94,10 +107,7 @@ export default function ReviewsPage() {
                                     </TableCell>
                                     <TableCell className="max-w-sm truncate">{review.message}</TableCell>
                                     <TableCell>
-                                        <Badge variant={
-                                            review.status === 'approved' ? 'default' :
-                                            review.status === 'rejected' ? 'destructive' : 'secondary'
-                                        }>
+                                        <Badge variant={review.status === 'pending' ? 'secondary' : 'destructive'}>
                                             {review.status}
                                         </Badge>
                                     </TableCell>
@@ -111,18 +121,24 @@ export default function ReviewsPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleUpdateStatus(review.id, 'approved')}>
+                                                <DropdownMenuItem onClick={() => handleApproveReview(review)}>
                                                     <CheckCircle className="mr-2 h-4 w-4" />
                                                     Approve
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleUpdateStatus(review.id, 'rejected')}>
+                                                <DropdownMenuItem onClick={() => {
+                                                    handleDeleteReview(review.id);
+                                                    toast({ title: 'Review Rejected', variant: 'destructive'});
+                                                }}>
                                                     <XCircle className="mr-2 h-4 w-4" />
                                                     Reject
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
                                                     className="text-destructive focus:text-destructive"
-                                                    onClick={() => handleDeleteReview(review.id)}
+                                                    onClick={() => {
+                                                        handleDeleteReview(review.id)
+                                                        toast({ title: 'Review Deleted', variant: 'destructive'});
+                                                    }}
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
@@ -145,3 +161,5 @@ export default function ReviewsPage() {
         </Card>
     );
 }
+
+    

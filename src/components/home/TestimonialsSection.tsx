@@ -13,7 +13,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Review } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -27,7 +27,7 @@ const reviewSchema = z.object({
 type ReviewFormValues = z.infer<typeof reviewSchema>;
 
 // Raw type from Firestore
-type RawReview = Omit<Review, 'createdAt'> & { createdAt: Timestamp };
+type RawReview = Omit<Review, 'createdAt' | 'status' | 'userId'> & { createdAt: Timestamp };
 
 export function TestimonialsSection() {
   const firestore = useFirestore();
@@ -41,11 +41,10 @@ export function TestimonialsSection() {
     defaultValues: { rating: 0, message: "" },
   });
 
-  // Fetch approved reviews
+  // Fetch approved reviews from the public collection
   const reviewsQuery = useMemoFirebase(
     () => firestore ? query(
-      collection(firestore, 'reviews'),
-      where('status', '==', 'approved'),
+      collection(firestore, 'reviews_public'),
       orderBy('createdAt', 'desc')
     ) : null,
     [firestore]
@@ -54,7 +53,7 @@ export function TestimonialsSection() {
 
   const reviews = useMemo(() => {
     if (!rawReviews) return [];
-    return rawReviews.map(r => ({ ...r, createdAt: r.createdAt?.toDate() ?? new Date() }));
+    return rawReviews.map(r => ({ ...r, createdAt: r.createdAt?.toDate() ?? new Date() } as Review));
   }, [rawReviews]);
 
   // Form submission handler
@@ -69,7 +68,8 @@ export function TestimonialsSection() {
         return;
     }
 
-    const reviewsCollection = collection(firestore, 'reviews');
+    // Submit new reviews to the private collection for moderation
+    const reviewsCollection = collection(firestore, 'reviews_private');
     addDocumentNonBlocking(reviewsCollection, {
       userId: user.uid,
       name: user.displayName || user.email || 'Anonymous User',
@@ -205,3 +205,5 @@ export function TestimonialsSection() {
     </section>
   );
 }
+
+    

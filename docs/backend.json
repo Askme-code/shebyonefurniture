@@ -7,10 +7,6 @@
       "type": "object",
       "description": "Represents a furniture product in the catalog.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the product."
-        },
         "name": {
           "type": "string",
           "description": "Name of the product."
@@ -49,7 +45,6 @@
         }
       },
       "required": [
-        "id",
         "name",
         "price",
         "description",
@@ -66,10 +61,6 @@
       "type": "object",
       "description": "Represents a customer order.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the order."
-        },
         "customerName": {
           "type": "string",
           "description": "Name of the customer who placed the order."
@@ -108,7 +99,6 @@
         }
       },
       "required": [
-        "id",
         "customerName",
         "phone",
         "address",
@@ -125,17 +115,12 @@
       "type": "object",
       "description": "Represents a user of the application (admin or customer).",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the user."
-        },
         "role": {
           "type": "string",
           "description": "Role of the user (admin or customer)."
         }
       },
       "required": [
-        "id",
         "role"
       ]
     },
@@ -144,10 +129,6 @@
       "description": "Represents a user's public profile data.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "The user's unique ID from Firebase Auth."
-        },
         "email": {
           "type": "string",
           "format": "email",
@@ -174,7 +155,6 @@
         }
       },
       "required": [
-        "id",
         "email"
       ]
     },
@@ -238,13 +218,9 @@
     },
     "Review": {
       "title": "Review",
-      "description": "Represents a customer review or testimonial.",
+      "description": "Represents a customer review or testimonial, stored privately for moderation.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the review."
-        },
         "userId": {
             "type": "string",
             "description": "The ID of the user who wrote the review."
@@ -277,13 +253,48 @@
         }
       },
       "required": [
-        "id",
         "userId",
         "name",
         "rating",
         "message",
         "status",
         "createdAt"
+      ]
+    },
+     "PublicReview": {
+      "title": "Public Review",
+      "description": "Represents a customer review that has been approved and is publicly visible.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the person who wrote the review."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Star rating from 1 to 5."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the review."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the review was originally submitted."
+        },
+        "approvedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the review was approved by an admin."
+        }
+      },
+      "required": [
+        "name",
+        "rating",
+        "message",
+        "createdAt",
+        "approvedAt"
       ]
     }
   },
@@ -393,13 +404,29 @@
         }
       },
       {
-        "path": "/reviews/{reviewId}",
+        "path": "/reviews_private/{reviewId}",
         "definition": {
           "entityName": "Review",
           "schema": {
             "$ref": "#/backend/entities/Review"
           },
-          "description": "Stores customer reviews. Publicly writable for submissions (status must be 'pending'), admin-only for management and approval. Approved reviews are publicly readable.",
+          "description": "Stores customer reviews for moderation. Users can create their own. Admins can read all for moderation. Users can only read their own.",
+          "params": [
+            {
+              "name": "reviewId",
+              "description": "Unique identifier for the review."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviews_public/{reviewId}",
+        "definition": {
+          "entityName": "PublicReview",
+          "schema": {
+            "$ref": "#/backend/entities/PublicReview"
+          },
+          "description": "Stores approved customer reviews. Publicly readable by all users. Only writable by admins.",
           "params": [
             {
               "name": "reviewId",
@@ -409,6 +436,8 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a top-level `orders` collection. This structure allows admins to efficiently query all orders for the admin dashboard. Security rules ensure that users can only read/write their own orders (by checking the `userId` field in the order document), while admins have full access. This avoids the limitations of securing collection group queries with `exists()` or `get()` calls to other documents.\n3.  **Users & Roles:** A `/users` collection stores public profile information for all registered users, created automatically on first login. This allows admins to view and manage a list of all application users. A separate `roles_admin` collection manages administrator privileges via an existence check, which is highly performant. Admins can modify the `roles_admin` collection to grant or revoke privileges.\n\nThis structure facilitates secure `list` operations (QAPs) by:\n\n*   Using top-level collections for orders and users, which can be directly and efficiently queried by admins.\n*   Securing user-specific data (orders, user profiles) based on a `userId` field or document ID, allowing users to securely query for their own data without being able to see others'.\n*   Using a dedicated `/roles_admin` collection for global role management, enabling efficient authorization checks."
+    "reasoning": "The Firestore structure is designed to support the Shaaban Furniture application, focusing on products, orders, and users with a clear separation of concerns and security.  Authorization Independence is achieved through the following:\n\n1.  **Products:**  Products are stored in a flat `products` collection. Admin-only access for creation, modification, and deletion is enforced via security rules checking for the existence of a document in the `/roles_admin/{uid}` collection.  This eliminates the need for `get()` calls to determine admin status.  Anyone can view products, supporting QAPs for listing.\n2.  **Orders:** Orders are stored in a top-level `orders` collection. This structure allows admins to efficiently query all orders for the admin dashboard. Security rules ensure that users can only read/write their own orders (by checking the `userId` field in the order document), while admins have full access. This avoids the limitations of securing collection group queries with `exists()` or `get()` calls to other documents.\n3.  **Users & Roles:** A `/users` collection stores public profile information for all registered users, created automatically on first login. This allows admins to view and manage a list of all application users. A separate `roles_admin` collection manages administrator privileges via an existence check, which is highly performant. Admins can modify the `roles_admin` collection to grant or revoke privileges.\n4.  **Reviews:** A two-collection strategy is used for reviews to ensure security and query performance. New reviews are submitted to `reviews_private`, which is only readable by the user who created it or an admin. When an admin approves a review, it is copied to the `reviews_public` collection, which is world-readable. This separation prevents insecure `list` queries and provides a robust moderation workflow."
   }
 }
+
+    
