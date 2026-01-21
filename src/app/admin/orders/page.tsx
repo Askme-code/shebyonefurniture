@@ -4,6 +4,9 @@ import {
   MoreVertical,
   ListFilter,
   File,
+  Truck,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import type { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -40,9 +43,14 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { useOrders } from '@/hooks/use-orders';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { doc } from 'firebase/firestore';
 
 export default function OrdersPage() {
     const { orders, isLoading } = useOrders();
+    const firestore = useFirestore();
+    const { toast } = useToast();
 
     const [filteredOrders, setFilteredOrders] = React.useState<Order[]>(orders);
     const [activeTab, setActiveTab] = React.useState('all');
@@ -56,6 +64,16 @@ export default function OrdersPage() {
         }
         setFilteredOrders(filtered);
     }, [activeTab, orders]);
+    
+    const handleUpdateStatus = (orderId: string, status: Order['status']) => {
+        if (!firestore) return;
+        const orderRef = doc(firestore, 'orders', orderId);
+        updateDocumentNonBlocking(orderRef, { status });
+        toast({
+            title: 'Order Status Updated',
+            description: `Order has been marked as ${status}.`,
+        });
+    };
 
     if (isLoading) {
         return (
@@ -158,8 +176,22 @@ export default function OrdersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuItem>Delete</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'Processing')}>
+                                    <Truck className="mr-2 h-4 w-4" />
+                                    Mark as Processing
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'Delivered')}>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Mark as Delivered
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleUpdateStatus(order.id, 'Cancelled')}
+                                >
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                    Cancel Order
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                             </DropdownMenu>
                         </TableCell>

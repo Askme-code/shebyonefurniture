@@ -6,10 +6,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function MyOrdersPage() {
     const { orders, isLoading: areOrdersLoading } = useOrders();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const handleCancelOrder = (orderId: string) => {
+        if (!firestore) return;
+        const orderRef = doc(firestore, 'orders', orderId);
+        updateDocumentNonBlocking(orderRef, { status: 'Cancelled' });
+        toast({
+            title: 'Order Cancelled',
+            description: 'Your order has been successfully cancelled.',
+            variant: 'destructive',
+        });
+    };
 
     return (
         <Card>
@@ -30,6 +57,7 @@ export default function MyOrdersPage() {
                                 <TableHead>Date</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -44,6 +72,29 @@ export default function MyOrdersPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(order.total)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {order.status === 'Pending' && (
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="outline" size="sm">Cancel</Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure you want to cancel this order?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Back</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleCancelOrder(order.id)} className="bg-destructive hover:bg-destructive/90">
+                                                            Confirm Cancellation
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}
