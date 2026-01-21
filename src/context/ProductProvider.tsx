@@ -16,7 +16,7 @@ export const ProductContext = createContext<{
   products: Product[];
   isLoading: boolean;
   getProductById: (id: string) => Product | undefined;
-  addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'images'>) => void;
+  addProduct: (product: Omit<Product, 'id' | 'createdAt'>) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
 }>({
@@ -56,14 +56,13 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   }, [products]);
 
 
-  const addProduct = useCallback((productData: Omit<Product, 'id' | 'createdAt' | 'images'>) => {
+  const addProduct = useCallback((productData: Omit<Product, 'id' | 'createdAt'>) => {
     if (!firestore) return;
 
     const productsCollection = collection(firestore, 'products');
     const newProduct = {
         ...productData,
         createdAt: serverTimestamp(),
-        images: [{ url: 'https://placehold.co/800x600', hint: 'placeholder' }],
     };
     
     addDocumentNonBlocking(productsCollection, newProduct);

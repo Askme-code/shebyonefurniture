@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { getCategories } from '@/lib/data';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useProducts } from '@/hooks/use-products';
 
@@ -25,6 +26,7 @@ const productSchema = z.object({
   category: z.string().min(1, 'Please select a category'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   isFeatured: z.boolean().default(false),
+  images: z.array(z.object({ url: z.string().url({ message: "Please enter a valid image URL." }) })).min(1, "At least one image is required."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -44,11 +46,27 @@ export default function NewProductPage() {
       stock: 0,
       isFeatured: false,
       category: '',
+      images: [{ url: '' }],
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "images",
+  });
+
+  useEffect(() => {
+    if (fields.length === 0) {
+      append({ url: "" });
+    }
+  }, [fields, append]);
+
   const onSubmit = (data: ProductFormValues) => {
-    addProduct(data);
+    const productData = {
+        ...data,
+        images: data.images.map(image => ({ url: image.url, hint: '' }))
+    };
+    addProduct(productData);
     toast({
       title: 'Product Created',
       description: `Product "${data.name}" has been created successfully.`,
@@ -117,6 +135,49 @@ export default function NewProductPage() {
                   )}
                 />
               </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Product Images</CardTitle>
+                    <CardDescription>
+                    Add one or more image URLs for your product.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                        <FormField
+                        control={form.control}
+                        name={`images.${index}.url`}
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                            <FormControl>
+                                <Input placeholder="https://example.com/image.png" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                        >
+                        <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    ))}
+                    <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ url: "" })}
+                    >
+                    Add Image
+                    </Button>
+                </CardContent>
             </Card>
             <Card>
               <CardHeader>

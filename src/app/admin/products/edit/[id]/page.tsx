@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useParams, notFound } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEffect } from 'react';
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { getCategories } from '@/lib/data';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useProducts } from '@/hooks/use-products';
 import type { Product } from '@/lib/types';
@@ -28,6 +28,7 @@ const productSchema = z.object({
   category: z.string().min(1, 'Please select a category'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   isFeatured: z.boolean().default(false),
+  images: z.array(z.object({ url: z.string().url({ message: "Please enter a valid image URL." }) })).min(1, "At least one image is required."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -51,7 +52,13 @@ export default function EditProductPage() {
       category: '',
       stock: 0,
       isFeatured: false,
+      images: [{ url: '' }],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "images",
   });
   
   useEffect(() => {
@@ -63,6 +70,7 @@ export default function EditProductPage() {
             category: product.category,
             stock: product.stock,
             isFeatured: product.isFeatured,
+            images: product.images.map(img => ({ url: img.url })),
         });
     }
   }, [product, form]);
@@ -81,6 +89,7 @@ export default function EditProductPage() {
     const updatedProduct: Product = {
         ...product,
         ...data,
+        images: data.images.map(image => ({ url: image.url, hint: product.images.find(i => i.url === image.url)?.hint || '' }))
     };
     updateProduct(updatedProduct);
     toast({
@@ -151,6 +160,49 @@ export default function EditProductPage() {
                   )}
                 />
               </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Product Images</CardTitle>
+                    <CardDescription>
+                    Add one or more image URLs for your product.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                        <FormField
+                        control={form.control}
+                        name={`images.${index}.url`}
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                            <FormControl>
+                                <Input placeholder="https://example.com/image.png" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                        >
+                        <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    ))}
+                    <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ url: "" })}
+                    >
+                    Add Image
+                    </Button>
+                </CardContent>
             </Card>
             <Card>
               <CardHeader>
