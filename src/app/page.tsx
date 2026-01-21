@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ArrowRight } from 'lucide-react';
 import { OurServices } from '@/components/layout/OurServices';
 import { ProductGallery } from '@/components/layout/ProductGallery';
+import { TestimonialsSection } from '@/components/home/TestimonialsSection';
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'hero-1');
 
@@ -47,6 +48,9 @@ export default function Home() {
 
         {/* Featured Products Section */}
         <FeaturedProducts />
+
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
         {/* Our Services Section */}
         <OurServices />

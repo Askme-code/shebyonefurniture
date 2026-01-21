@@ -235,6 +235,50 @@
         "createdAt",
         "isRead"
       ]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Represents a customer review or testimonial.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the review."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the person who wrote the review."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Star rating from 1 to 5."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the review."
+        },
+        "status": {
+          "type": "string",
+          "description": "The moderation status of the review.",
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the review was submitted."
+        }
+      },
+      "required": [
+        "name",
+        "rating",
+        "message",
+        "status",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -338,6 +382,22 @@
             {
               "name": "messageId",
               "description": "Unique identifier for the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviews/{reviewId}",
+        "definition": {
+          "entityName": "Review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "Stores customer reviews. Publicly writable for submissions (status must be 'pending'), admin-only for management and approval. Approved reviews are publicly readable.",
+          "params": [
+            {
+              "name": "reviewId",
+              "description": "Unique identifier for the review."
             }
           ]
         }

@@ -53,3 +53,12 @@ export type User = {
   email: string;
   role: 'admin' | 'customer';
 };
+
+export type Review = {
+    id: string;
+    name: string;
+    rating: number;
+    message: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: Date;
+};

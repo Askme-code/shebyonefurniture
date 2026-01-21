@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -47,6 +48,15 @@ service cloud.firestore {
              data.keys().hasAll(['email', 'createdAt']);
     }
 
+    function isValidReview() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'rating', 'message', 'status', 'createdAt'])
+        && data.name is string && data.name.size() > 0
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.message is string && data.message.size() > 10
+        && data.status == 'pending'; // Force status to pending on create
+    }
+
     // ------------------------------
     // Products - Public catalog
     // ------------------------------
@@ -61,10 +71,13 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isOwner(request.resource.data.userId) && isValidOrderCreate();
       allow get: if isAdmin() || isOwner(resource.data.userId);
-      // Admins can list all. For non-admins, the `get` rule above is applied to each document in the result.
-      // The client MUST filter by userId to ensure the query succeeds for non-admins.
       allow list: if isAdmin() || isSignedIn();
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() ||
+                      (isOwner(resource.data.userId) &&
+                       resource.data.status == 'Pending' &&
+                       request.resource.data.size() == 1 &&
+                       request.resource.data.status == 'Cancelled');
+      allow delete: if isAdmin();
     }
 
     // ------------------------------
@@ -100,6 +113,16 @@ service cloud.firestore {
     match /newsletter_subscribers/{subscriberId} {
       allow create: if isValidSubscription();
       allow read, list, update, delete: if isAdmin();
+    }
+
+    // ------------------------------
+    // Reviews - Customer testimonials
+    // ------------------------------
+    match /reviews/{reviewId} {
+      allow create: if isValidReview();
+      allow list: if isAdmin() || request.query.where('status', '==', 'approved');
+      allow get: if isAdmin() || resource.data.status == 'approved';
+      allow update, delete: if isAdmin();
     }
   }
 }
