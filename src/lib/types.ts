@@ -56,9 +56,10 @@ export type User = {
 
 export type Review = {
     id: string;
-    name: string;
+    userId: string;
+    userName: string;
     rating: number;
-    message: string;
+    comment: string;
     status: 'pending' | 'approved' | 'rejected';
     createdAt: Date;
 };

@@ -76,7 +76,7 @@ export default function ReviewsPage() {
                             <TableRow>
                                 <TableHead>Customer</TableHead>
                                 <TableHead>Rating</TableHead>
-                                <TableHead>Message</TableHead>
+                                <TableHead>Comment</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -84,7 +84,7 @@ export default function ReviewsPage() {
                         <TableBody>
                             {reviews.map((review) => (
                                 <TableRow key={review.id}>
-                                    <TableCell className="font-medium">{review.name}</TableCell>
+                                    <TableCell className="font-medium">{review.userName}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center">
                                             {[...Array(5)].map((_, i) => (
@@ -92,7 +92,7 @@ export default function ReviewsPage() {
                                             ))}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="max-w-sm truncate">{review.message}</TableCell>
+                                    <TableCell className="max-w-sm truncate">{review.comment}</TableCell>
                                     <TableCell>
                                         <Badge variant={
                                             review.status === 'approved' ? 'default' :

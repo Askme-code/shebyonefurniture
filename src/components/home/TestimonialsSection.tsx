@@ -12,17 +12,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Review } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Link from 'next/link';
 
 // Schema for the review form
 const reviewSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
   rating: z.number().min(1, "Please provide a rating.").max(5),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  comment: z.string().min(10, "Comment must be at least 10 characters"),
 });
 type ReviewFormValues = z.infer<typeof reviewSchema>;
 
@@ -31,13 +31,14 @@ type RawReview = Omit<Review, 'createdAt'> & { createdAt: Timestamp };
 
 export function TestimonialsSection() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [hoveredRating, setHoveredRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
 
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
-    defaultValues: { name: "", rating: 0, message: "" },
+    defaultValues: { rating: 0, comment: "" },
   });
 
   // Fetch approved reviews
@@ -59,10 +60,20 @@ export function TestimonialsSection() {
   // Form submission handler
   const onSubmit = (data: ReviewFormValues) => {
     if (!firestore) return;
+    if (!user) {
+        toast({
+            title: "Authentication Required",
+            description: "You must be logged in to submit a review.",
+            variant: "destructive",
+        });
+        return;
+    }
 
     const reviewsCollection = collection(firestore, 'reviews');
     addDocumentNonBlocking(reviewsCollection, {
       ...data,
+      userId: user.uid,
+      userName: user.displayName || user.email || 'Anonymous User',
       status: 'pending',
       createdAt: serverTimestamp(),
     });
@@ -108,9 +119,9 @@ export function TestimonialsSection() {
                                                         <Star key={i} className={cn("h-5 w-5", i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground')} />
                                                     ))}
                                                 </div>
-                                                <p className="text-muted-foreground italic">"{review.message}"</p>
+                                                <p className="text-muted-foreground italic">"{review.comment}"</p>
                                             </div>
-                                            <p className="mt-4 font-bold font-headline text-lg">- {review.name}</p>
+                                            <p className="mt-4 font-bold font-headline text-lg">- {review.userName}</p>
                                         </Card>
                                     </div>
                                 </CarouselItem>
@@ -131,64 +142,62 @@ export function TestimonialsSection() {
                     </p>
                 </div>
                 <Card className="p-6 sm:p-8 bg-background/80 backdrop-blur-sm shadow-xl">
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Your Name</FormLabel>
-                                        <FormControl><Input placeholder="e.g. Jane Doe" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="rating"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Your Rating</FormLabel>
-                                        <FormControl>
-                                            <div className="flex items-center gap-1">
-                                                {[1, 2, 3, 4, 5].map((value) => (
-                                                    <Star
-                                                        key={value}
-                                                        className={cn(
-                                                            "h-8 w-8 cursor-pointer transition-colors",
-                                                            (hoveredRating >= value || selectedRating >= value)
-                                                                ? 'text-yellow-400 fill-yellow-400'
-                                                                : 'text-muted-foreground'
-                                                        )}
-                                                        onMouseEnter={() => setHoveredRating(value)}
-                                                        onMouseLeave={() => setHoveredRating(0)}
-                                                        onClick={() => {
-                                                            setSelectedRating(value);
-                                                            field.onChange(value);
-                                                        }}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="message"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Your Review</FormLabel>
-                                        <FormControl><Textarea placeholder="Tell us about your experience..." {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>Submit Review</Button>
-                        </form>
-                    </Form>
+                    {user ? (
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <FormField
+                                    control={form.control}
+                                    name="rating"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Your Rating</FormLabel>
+                                            <FormControl>
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 4, 5].map((value) => (
+                                                        <Star
+                                                            key={value}
+                                                            className={cn(
+                                                                "h-8 w-8 cursor-pointer transition-colors",
+                                                                (hoveredRating >= value || selectedRating >= value)
+                                                                    ? 'text-yellow-400 fill-yellow-400'
+                                                                    : 'text-muted-foreground'
+                                                            )}
+                                                            onMouseEnter={() => setHoveredRating(value)}
+                                                            onMouseLeave={() => setHoveredRating(0)}
+                                                            onClick={() => {
+                                                                setSelectedRating(value);
+                                                                field.onChange(value);
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="comment"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Your Review</FormLabel>
+                                            <FormControl><Textarea placeholder="Tell us about your experience..." {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>Submit Review</Button>
+                            </form>
+                        </Form>
+                    ) : (
+                        <div className="text-center">
+                            <p className="mb-4 text-muted-foreground">Please log in to submit a review.</p>
+                            <Button asChild>
+                                <Link href="/login">Log In</Link>
+                            </Button>
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>
