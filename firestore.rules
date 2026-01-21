@@ -142,10 +142,13 @@ service cloud.firestore {
     // Admin Roles
     // ==============================
     match /roles_admin/{userId} {
-      // User can check their own role, admin can check any.
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if false; // Disallow listing all admins for security
+      // Any signed-in user can check their own role document.
+      // This is required for the isAdmin() helper to work without circular dependencies.
+      allow get: if isOwner(userId);
+      // Only an existing admin can grant/revoke admin status.
       allow write: if isAdmin();
+      // Disallow listing all admins for security.
+      allow list: if false;
     }
 
     // ==============================
