@@ -85,16 +85,14 @@ service cloud.firestore {
     // ==============================
     match /orders/{orderId} {
 
-      // Create order
+      // Create
       allow create: if isOwner(request.resource.data.userId)
                     && isValidOrderCreate();
 
-      // Read (get + list)
-      // Admin: all
-      // User: only their own orders
+      // Read
       allow read: if isAdmin() || isOwner(resource.data.userId);
 
-      // Cancel order (user)
+      // Update
       allow update: if isAdmin()
         || (
           isOwner(resource.data.userId)
@@ -112,7 +110,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isSignedIn();
       allow get, update: if isOwner(userId) || isAdmin();
-      allow delete, list: if isAdmin();
+      allow list, delete: if isAdmin();
     }
 
     // ==============================
@@ -145,11 +143,19 @@ service cloud.firestore {
     // ==============================
     match /reviews/{reviewId} {
 
-      // Users submit reviews
+      // Submit review
       allow create: if isValidReviewCreate();
 
-      // Anyone can read reviews. Client filters for 'approved' status.
-      allow read: if true;
+      // Read single review
+      allow get: if
+        isAdmin()
+        || resource.data.status == 'approved'
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      // List reviews (QUERY SAFE)
+      allow list: if
+        isAdmin()
+        || request.query.where('status', '==', 'approved');
 
       // Admin moderation
       allow update, delete: if isAdmin();
