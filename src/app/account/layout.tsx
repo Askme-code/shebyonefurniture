@@ -57,12 +57,12 @@ export default function AccountLayout({
   const router = useRouter();
   
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserLoading && (!user || user.isAnonymous)) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || user.isAnonymous) {
     return <AccountLoadingScreen />;
   }
 
@@ -81,3 +81,5 @@ export default function AccountLayout({
     </AppLayout>
   );
 }
+
+    

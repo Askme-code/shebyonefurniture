@@ -52,7 +52,7 @@ export default function RegisterPage() {
     });
   };
   
-  if (isUserLoading || user) {
+  if (isUserLoading || (user && !user.isAnonymous)) {
     return <AuthRedirector />;
   }
 
@@ -137,3 +137,5 @@ export default function RegisterPage() {
     </AppLayout>
   );
 }
+
+    

@@ -85,7 +85,7 @@ export function Header() {
           <div className="flex items-center gap-2">
             {isLoading ? (
               <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-            ) : user ? (
+            ) : (user && !user.isAnonymous) ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -176,3 +176,5 @@ export function Header() {
     </header>
   );
 }
+
+    

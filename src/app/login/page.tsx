@@ -54,7 +54,7 @@ export default function LoginPage() {
     });
   };
   
-  if (isUserLoading || user) {
+  if (isUserLoading || (user && !user.isAnonymous)) {
       return <AuthRedirector />;
   }
 
@@ -135,3 +135,5 @@ export default function LoginPage() {
     </AppLayout>
   );
 }
+
+    

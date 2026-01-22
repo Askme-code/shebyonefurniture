@@ -62,7 +62,7 @@ export function TestimonialsSection() {
   // Form submission handler
   const onSubmit = (data: ReviewFormValues) => {
     if (!firestore) return;
-    if (!user) {
+    if (!user || user.isAnonymous) {
         toast({
             title: "Authentication Required",
             description: "You must be logged in to submit a review.",
@@ -146,7 +146,7 @@ export function TestimonialsSection() {
                     </p>
                 </div>
                 <Card className="p-6 sm:p-8 bg-background/80 backdrop-blur-sm shadow-xl">
-                    {user ? (
+                    {user && !user.isAnonymous ? (
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField
@@ -208,3 +208,5 @@ export function TestimonialsSection() {
     </section>
   );
 }
+
+    
