@@ -44,6 +44,9 @@ export type Order = {
   address: string;
   items: OrderItem[];
   total: number;
+  amountPaid?: number;
+  balance?: number;
+  paymentMethod?: string;
   status: 'Pending' | 'Processing' | 'Delivered' | 'Cancelled';
   createdAt: Date;
   userId: string;

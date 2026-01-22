@@ -92,6 +92,18 @@
           "type": "number",
           "description": "The total price of the order."
         },
+        "amountPaid": {
+            "type": "number",
+            "description": "The amount paid by the customer."
+        },
+        "balance": {
+            "type": "number",
+            "description": "The remaining balance for the order."
+        },
+        "paymentMethod": {
+            "type": "string",
+            "description": "The mode of payment used for the order."
+        },
         "status": {
           "type": "string",
           "description": "The current status of the order (e.g., Pending, Processing, Delivered)."

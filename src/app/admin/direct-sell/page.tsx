@@ -33,13 +33,18 @@ import { useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Store, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Product } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
+
+const paymentMethods = ["Cash", "QR", "Mix by Yas", "Lipa", "Bank", "Cheque", "Loan"] as const;
 
 const directSellSchema = z.object({
   productId: z.string().min(1, 'Please select a product.'),
   quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1.'),
   customerName: z.string().optional(),
+  amountPaid: z.coerce.number().min(0, "Amount paid can't be negative."),
+  paymentMethod: z.enum(paymentMethods),
 });
 
 type DirectSellFormValues = z.infer<typeof directSellSchema>;
@@ -57,12 +62,15 @@ export default function DirectSellPage() {
             productId: '',
             quantity: 1,
             customerName: '',
+            amountPaid: 0,
+            paymentMethod: 'Cash',
         },
     });
 
     const { watch, setValue } = form;
     const watchedProductId = watch('productId');
     const watchedQuantity = watch('quantity');
+    const watchedAmountPaid = watch('amountPaid');
 
     useEffect(() => {
         if (watchedProductId) {
@@ -75,6 +83,22 @@ export default function DirectSellPage() {
             setSelectedProduct(null);
         }
     }, [watchedProductId, products, watchedQuantity, setValue]);
+    
+    const total = useMemo(() => {
+        if (!selectedProduct) return 0;
+        return selectedProduct.price * watchedQuantity;
+    }, [selectedProduct, watchedQuantity]);
+
+    const balance = useMemo(() => {
+        return total - watchedAmountPaid;
+    }, [total, watchedAmountPaid]);
+
+    useEffect(() => {
+        if (total > 0) {
+            setValue('amountPaid', total);
+        }
+    }, [total, setValue]);
+
 
     const onSubmit = (data: DirectSellFormValues) => {
         if (!firestore || !adminUser) {
@@ -97,6 +121,7 @@ export default function DirectSellPage() {
         }
         
         const total = product.price * data.quantity;
+        const balance = total - data.amountPaid;
 
         const orderData = {
             customerName: data.customerName || 'In-Store Customer',
@@ -109,6 +134,9 @@ export default function DirectSellPage() {
                 price: product.price,
             }],
             total,
+            amountPaid: data.amountPaid,
+            balance,
+            paymentMethod: data.paymentMethod,
             status: 'Delivered',
             createdAt: serverTimestamp(),
             userId: adminUser.uid,
@@ -179,26 +207,84 @@ export default function DirectSellPage() {
                         />
 
                         {selectedProduct && (
-                             <FormField
-                                control={form.control}
-                                name="quantity"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Quantity</FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                type="number" 
-                                                min="1"
-                                                max={selectedProduct.stock}
-                                                placeholder="1" 
-                                                {...field} 
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <>
+                                <FormField
+                                    control={form.control}
+                                    name="quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Quantity</FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    type="number" 
+                                                    min="1"
+                                                    max={selectedProduct.stock}
+                                                    placeholder="1" 
+                                                    {...field} 
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                
+                                <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Total Price</span>
+                                        <span className="font-semibold">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(total)}
+                                        </span>
+                                    </div>
+                                    <Separator />
+                                     <FormField
+                                        control={form.control}
+                                        name="amountPaid"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between">
+                                                <FormLabel>Amount Paid</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" className="w-40 text-right" {...field} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Separator />
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Balance</span>
+                                        <span className="font-semibold">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(balance)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <FormMessage>{form.formState.errors.amountPaid?.message}</FormMessage>
+
+                                <FormField
+                                    control={form.control}
+                                    name="paymentMethod"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Mode of Payment</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a payment method" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {paymentMethods.map(method => (
+                                                        <SelectItem key={method} value={method}>
+                                                            {method}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </>
                         )}
+
 
                         <FormField
                             control={form.control}

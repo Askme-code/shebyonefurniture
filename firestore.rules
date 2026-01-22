@@ -90,7 +90,7 @@ service cloud.firestore {
 
     // Orders: Users can create and read their own. Admins can read all.
     match /orders/{orderId} {
-      allow create: if isValidOrderCreate();
+      allow create: if isValidOrderCreate() || isAdmin();
 
       allow get: if isOwner(resource.data.userId) || isAdmin();
 
