@@ -24,9 +24,10 @@ import {
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
-import { useToast } from '@/hooks/use-toast';
 import { AuthRedirector } from '@/components/auth/AuthRedirector';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { MessageDialog } from '@/components/common/MessageDialog';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -38,8 +39,14 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const { toast } = useToast();
   const router = useRouter();
+
+  const [dialogState, setDialogState] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    variant: 'error' as 'success' | 'error',
+  });
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -50,23 +57,32 @@ export default function RegisterPage() {
     if (!auth) return;
     initiateEmailSignUp(auth, data.email, data.password)
       .then(() => {
-        toast({
-          title: 'Account Created!',
-          description: 'Welcome aboard! Redirecting you to the homepage.',
+        setDialogState({
+            isOpen: true,
+            title: 'Account Created!',
+            description: 'Welcome aboard! You will be redirected to the homepage.',
+            variant: 'success'
         });
-        router.push('/');
       })
       .catch((error) => {
-        toast({
-          variant: 'destructive',
-          title: 'Registration Failed',
-          description:
-            error.code === 'auth/email-already-in-use'
+        setDialogState({
+            isOpen: true,
+            title: 'Registration Failed',
+            description: error.code === 'auth/email-already-in-use'
               ? 'This email is already associated with an account.'
-              : error.message,
+              : 'An authentication error has occurred. Please try again.',
+            variant: 'error'
         });
       });
   };
+
+  const handleDialogClose = () => {
+    const wasSuccess = dialogState.variant === 'success';
+    setDialogState({ ...dialogState, isOpen: false });
+    if (wasSuccess) {
+      router.push('/');
+    }
+  }
 
   if (isUserLoading || (user && !user.isAnonymous)) {
     return <AuthRedirector />;
@@ -74,6 +90,7 @@ export default function RegisterPage() {
 
   return (
     <AppLayout>
+      <MessageDialog {...dialogState} onClose={handleDialogClose} />
       <div className="container flex items-center justify-center py-12 md:py-24">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">

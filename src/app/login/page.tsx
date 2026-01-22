@@ -28,6 +28,8 @@ import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useToast } from '@/hooks/use-toast';
 import { AuthRedirector } from '@/components/auth/AuthRedirector';
+import { useState } from 'react';
+import { MessageDialog } from '@/components/common/MessageDialog';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -40,6 +42,13 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  
+  const [dialogState, setDialogState] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    variant: 'error' as 'success' | 'error',
+  });
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,18 +57,17 @@ export default function LoginPage() {
 
   const onSubmit = (data: LoginFormValues) => {
     if (!auth) return;
+    toast({
+      title: 'Signing In...',
+      description: 'Please wait while we check your credentials.',
+    });
     initiateEmailSignIn(auth, data.email, data.password)
-      .then(() => {
-        toast({
-          title: 'Signing In...',
-          description: 'Please wait while we check your credentials.',
-        });
-      })
       .catch((error) => {
-        toast({
-          variant: 'destructive',
-          title: 'Sign In Failed',
-          description: 'Invalid email or password. Please try again.',
+        setDialogState({
+          isOpen: true,
+          title: 'Error!',
+          description: 'You entered an incorrect password/User name. Please try again.',
+          variant: 'error',
         });
       });
   };
@@ -70,6 +78,10 @@ export default function LoginPage() {
 
   return (
     <AppLayout>
+      <MessageDialog 
+        {...dialogState}
+        onClose={() => setDialogState(prev => ({...prev, isOpen: false}))}
+      />
       <div className="container flex items-center justify-center py-12 md:py-24">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
