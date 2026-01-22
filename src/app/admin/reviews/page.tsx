@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import type { Review } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -158,6 +158,11 @@ export default function ReviewsPage() {
                     </div>
                 )}
             </CardContent>
+            <CardFooter>
+                <div className="text-xs text-muted-foreground">
+                    Showing <strong>{reviews.length}</strong> pending reviews.
+                </div>
+            </CardFooter>
         </Card>
     );
 }
