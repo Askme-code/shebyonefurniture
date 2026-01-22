@@ -28,6 +28,7 @@ import { AuthRedirector } from '@/components/auth/AuthRedirector';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { MessageDialog } from '@/components/common/MessageDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -40,6 +41,7 @@ export default function RegisterPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [dialogState, setDialogState] = useState({
     isOpen: false,
@@ -57,11 +59,10 @@ export default function RegisterPage() {
     if (!auth) return;
     initiateEmailSignUp(auth, data.email, data.password)
       .then(() => {
-        setDialogState({
-            isOpen: true,
-            title: 'Account Created!',
-            description: 'Welcome aboard! You will be redirected to the homepage.',
-            variant: 'success'
+        router.push('/');
+        toast({
+          title: 'Account Created!',
+          description: "Welcome aboard! You've been redirected to the homepage.",
         });
       })
       .catch((error) => {
@@ -77,11 +78,7 @@ export default function RegisterPage() {
   };
 
   const handleDialogClose = () => {
-    const wasSuccess = dialogState.variant === 'success';
     setDialogState({ ...dialogState, isOpen: false });
-    if (wasSuccess) {
-      router.push('/');
-    }
   }
 
   if (isUserLoading || (user && !user.isAnonymous)) {
