@@ -47,11 +47,21 @@ export default function LoginPage() {
   });
 
   const onSubmit = (data: LoginFormValues) => {
-    initiateEmailSignIn(auth, data.email, data.password);
-    toast({
-      title: 'Signing In...',
-      description: 'Please wait while we check your credentials.',
-    });
+    if (!auth) return;
+    initiateEmailSignIn(auth, data.email, data.password)
+      .then(() => {
+        toast({
+          title: 'Signing In...',
+          description: 'Please wait while we check your credentials.',
+        });
+      })
+      .catch((error) => {
+        toast({
+          variant: 'destructive',
+          title: 'Sign In Failed',
+          description: 'Invalid email or password. Please try again.',
+        });
+      });
   };
   
   if (isUserLoading || (user && !user.isAnonymous)) {
@@ -114,7 +124,7 @@ export default function LoginPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                     Sign In
                   </Button>
                 </form>
@@ -135,5 +145,3 @@ export default function LoginPage() {
     </AppLayout>
   );
 }
-
-    

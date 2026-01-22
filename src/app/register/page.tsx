@@ -26,6 +26,7 @@ import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { useToast } from '@/hooks/use-toast';
 import { AuthRedirector } from '@/components/auth/AuthRedirector';
+import { useRouter } from 'next/navigation';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -38,6 +39,7 @@ export default function RegisterPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -45,13 +47,27 @@ export default function RegisterPage() {
   });
 
   const onSubmit = (data: RegisterFormValues) => {
-    initiateEmailSignUp(auth, data.email, data.password);
-    toast({
-      title: 'Creating Account...',
-      description: 'Please wait while we set things up for you.',
-    });
+    if (!auth) return;
+    initiateEmailSignUp(auth, data.email, data.password)
+      .then(() => {
+        toast({
+          title: 'Account Created!',
+          description: 'Welcome aboard! Redirecting you to the homepage.',
+        });
+        router.push('/');
+      })
+      .catch((error) => {
+        toast({
+          variant: 'destructive',
+          title: 'Registration Failed',
+          description:
+            error.code === 'auth/email-already-in-use'
+              ? 'This email is already associated with an account.'
+              : error.message,
+        });
+      });
   };
-  
+
   if (isUserLoading || (user && !user.isAnonymous)) {
     return <AuthRedirector />;
   }
@@ -116,7 +132,11 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={form.formState.isSubmitting}
+                  >
                     Create Account
                   </Button>
                 </form>
@@ -137,5 +157,3 @@ export default function RegisterPage() {
     </AppLayout>
   );
 }
-
-    
