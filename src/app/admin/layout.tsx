@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import {
   Settings,
   PanelLeft,
   Mail,
+  Store,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -220,6 +220,18 @@ export default function AdminLayout({
               </TooltipTrigger>
               <TooltipContent side="right">Reports & Analytics</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/direct-sell"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <Store className="h-5 w-5" />
+                  <span className="sr-only">Direct Sell</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Direct Sell</TooltipContent>
+            </Tooltip>
           </nav>
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>
@@ -322,6 +334,13 @@ export default function AdminLayout({
                   >
                     <BarChart className="h-5 w-5" />
                     Reports & Analytics
+                  </Link>
+                  <Link
+                    href="/admin/direct-sell"
+                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <Store className="h-5 w-5" />
+                    Direct Sell
                   </Link>
                 </nav>
               </SheetContent>
