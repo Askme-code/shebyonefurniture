@@ -235,7 +235,6 @@ export function QuoteSection() {
                                             </FormItem>
                                         )}
                                     />
-                                    <FormDescription className="text-xs text-zinc-400">Max 5MB in jpg, pdf, png.</FormDescription>
                                 </div>
                                 <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
                                     <Send className="mr-2 h-4 w-4" /> REQUEST
