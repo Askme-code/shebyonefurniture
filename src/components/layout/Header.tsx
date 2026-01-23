@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Search, ShoppingBag, Menu, LogOut, User as UserIcon, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from './Logo';
 import { useCart } from '@/hooks/use-cart';
 import { categories } from '@/lib/data';
@@ -154,6 +154,14 @@ export function Header() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left">
+                    <SheetHeader>
+                        <SheetTitle>
+                            <Link href="/" className="flex items-center gap-2">
+                                <Logo />
+                                <span className="font-headline font-bold text-xl">Sheby Furniture</span>
+                            </Link>
+                        </SheetTitle>
+                    </SheetHeader>
                     <nav className="grid gap-6 text-lg font-medium mt-8">
                       {navLinks.map(link => (
                          <Link key={link.href} href={link.href} className="text-muted-foreground transition-colors hover:text-foreground">
@@ -176,5 +184,3 @@ export function Header() {
     </header>
   );
 }
-
-    
