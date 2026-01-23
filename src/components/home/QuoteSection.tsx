@@ -24,7 +24,6 @@ const quoteSchema = z.object({
   country: z.string().optional(),
   heardFrom: z.string().optional(),
   requirements: z.string().min(10, "Please share some details about your project."),
-  file: z.any().optional(),
 });
 
 type QuoteFormValues = z.infer<typeof quoteSchema>;
@@ -219,23 +218,6 @@ export function QuoteSection() {
                                         </FormItem>
                                     )}
                                 />
-                                <div className="flex flex-wrap items-center gap-4">
-                                     <FormField
-                                        control={form.control}
-                                        name="file"
-                                        render={() => (
-                                            <FormItem>
-                                            <FormLabel className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer bg-zinc-700 border-zinc-600 hover:bg-zinc-600 text-white")}>
-                                                Choose Files
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input type="file" className="hidden" />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
                                 <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
                                     <Send className="mr-2 h-4 w-4" /> REQUEST
                                 </Button>
