@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, useParams, notFound } from 'next/navigation';
@@ -29,6 +30,8 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   isFeatured: z.boolean().default(false),
   images: z.array(z.object({ url: z.string().url({ message: "Please enter a valid image URL." }) })).min(1, "At least one image is required."),
+  deliveryInfo: z.string().optional(),
+  discountPercentage: z.coerce.number().int().min(0).max(100).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -53,6 +56,8 @@ export default function EditProductPage() {
       stock: 0,
       isFeatured: false,
       images: [{ url: '' }],
+      deliveryInfo: '',
+      discountPercentage: 0,
     },
   });
 
@@ -71,15 +76,14 @@ export default function EditProductPage() {
             stock: product.stock,
             isFeatured: product.isFeatured,
             images: product.images.map(img => ({ url: img.url })),
+            deliveryInfo: product.deliveryInfo,
+            discountPercentage: product.discountPercentage,
         });
     }
   }, [product, form]);
 
   if (!product) {
-    // In a real app, you might want to show a loading state
-    // while fetching the product.
     if (typeof window !== 'undefined') {
-        // notFound() must be called from the root of a component
         return notFound();
     }
     return null;
@@ -89,7 +93,8 @@ export default function EditProductPage() {
     const updatedProduct: Product = {
         ...product,
         ...data,
-        images: data.images.map(image => ({ url: image.url, hint: product.images.find(i => i.url === image.url)?.hint || '' }))
+        images: data.images.map(image => ({ url: image.url, hint: product.images.find(i => i.url === image.url)?.hint || '' })),
+        discountPercentage: data.discountPercentage || 0,
     };
     updateProduct(updatedProduct);
     toast({
@@ -241,14 +246,15 @@ export default function EditProductPage() {
           <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
             <Card>
               <CardHeader>
-                <CardTitle>Category</CardTitle>
+                <CardTitle>Organization</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="grid gap-6">
                  <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Category</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -265,17 +271,7 @@ export default function EditProductPage() {
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
-                 <CardDescription>
-                  Additional settings for the product.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FormField
+                 <FormField
                   control={form.control}
                   name="isFeatured"
                   render={({ field }) => (
@@ -283,7 +279,7 @@ export default function EditProductPage() {
                       <div className="space-y-0.5">
                         <FormLabel>Featured Product</FormLabel>
                         <FormDescription>
-                          Display this product on the homepage.
+                          Display on homepage.
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -296,6 +292,39 @@ export default function EditProductPage() {
                   )}
                 />
               </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Discount & Delivery</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                    <FormField
+                        control={form.control}
+                        name="discountPercentage"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Discount (%)</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="10" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="deliveryInfo"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Delivery Info</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. Free Delivery" {...field} value={field.value || ''}/>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
             </Card>
           </div>
         </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -7,7 +8,7 @@ import { ProductImageGallery } from '@/components/products/ProductImageGallery';
 import { AddToCart } from '@/components/cart/AddToCart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Package, Loader2 } from 'lucide-react';
+import { CheckCircle, Package, Loader2, Truck } from 'lucide-react';
 import { Recommendations } from '@/components/products/Recommendations';
 
 export default function ProductPage() {
@@ -30,6 +31,9 @@ export default function ProductPage() {
   if (!product) {
     notFound();
   }
+  
+  const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+  const newPrice = hasDiscount ? product.price * (1 - product.discountPercentage! / 100) : product.price;
 
   return (
     <AppLayout>
@@ -39,14 +43,33 @@ export default function ProductPage() {
 
           <div>
             <h1 className="text-3xl lg:text-4xl font-headline font-bold">{product.name}</h1>
-            <p className="text-2xl font-bold text-primary my-4">
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
-            </p>
+             {hasDiscount ? (
+                <div className="flex items-baseline gap-2 my-4">
+                    <p className="text-2xl font-bold text-primary">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(newPrice)}
+                    </p>
+                    <p className="text-xl font-medium text-muted-foreground line-through">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
+                    </p>
+                    <Badge className="bg-destructive text-destructive-foreground">-{product.discountPercentage}% OFF</Badge>
+                </div>
+            ) : (
+                <p className="text-2xl font-bold text-primary my-4">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
+                </p>
+            )}
+
             <p className="text-muted-foreground leading-relaxed">
               {product.description}
             </p>
 
             <div className="my-6 space-y-4">
+               {product.deliveryInfo && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Truck className="h-5 w-5 text-primary"/>
+                        <span>{product.deliveryInfo}</span>
+                    </div>
+                )}
               {product.materials && (
                 <div className="flex items-start gap-4">
                   <span className="font-semibold w-24">Materials:</span>

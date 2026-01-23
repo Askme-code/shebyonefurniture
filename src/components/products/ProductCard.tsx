@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '../ui/badge';
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +25,11 @@ export function ProductCard({ product }: ProductCardProps) {
       description: `${product.name} has been added to your cart.`,
     });
   };
+  
+  const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+  const newPrice = hasDiscount
+      ? product.price * (1 - product.discountPercentage! / 100)
+      : product.price;
 
   return (
     <Card className="w-full overflow-hidden group transition-shadow duration-300 hover:shadow-xl">
@@ -36,6 +43,16 @@ export function ProductCard({ product }: ProductCardProps) {
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               data-ai-hint={product.images[0].hint}
             />
+            {hasDiscount && (
+                <Badge className="absolute top-2 right-2 z-10 bg-destructive text-destructive-foreground">
+                    -{product.discountPercentage}%
+                </Badge>
+            )}
+            {product.deliveryInfo && (
+                <Badge variant="secondary" className="absolute top-2 left-2 z-10">
+                    {product.deliveryInfo}
+                </Badge>
+            )}
           </div>
         </Link>
       </CardHeader>
@@ -47,9 +64,22 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
       </CardContent>
       <CardFooter className="flex justify-between items-center p-4 pt-0">
-        <p className="text-lg font-bold text-primary">
-          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
-        </p>
+         <div className="flex flex-col">
+            {hasDiscount ? (
+                <>
+                    <p className="text-lg font-bold text-primary">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(newPrice)}
+                    </p>
+                    <p className="text-sm text-muted-foreground line-through">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
+                    </p>
+                </>
+            ) : (
+                <p className="text-lg font-bold text-primary">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(product.price)}
+                </p>
+            )}
+        </div>
         <Button size="icon" variant="outline" onClick={handleAddToCart} aria-label={`Add ${product.name} to cart`}>
           <ShoppingBag className="h-5 w-5" />
         </Button>

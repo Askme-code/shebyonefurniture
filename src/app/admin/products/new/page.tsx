@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -27,6 +28,8 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   isFeatured: z.boolean().default(false),
   images: z.array(z.object({ url: z.string().url({ message: "Please enter a valid image URL." }) })).min(1, "At least one image is required."),
+  deliveryInfo: z.string().optional(),
+  discountPercentage: z.coerce.number().int().min(0).max(100).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -47,6 +50,8 @@ export default function NewProductPage() {
       isFeatured: false,
       category: '',
       images: [{ url: '' }],
+      deliveryInfo: '',
+      discountPercentage: 0,
     },
   });
 
@@ -64,7 +69,8 @@ export default function NewProductPage() {
   const onSubmit = (data: ProductFormValues) => {
     const productData = {
         ...data,
-        images: data.images.map(image => ({ url: image.url, hint: '' }))
+        images: data.images.map(image => ({ url: image.url, hint: '' })),
+        discountPercentage: data.discountPercentage || 0,
     };
     addProduct(productData);
     toast({
@@ -216,14 +222,15 @@ export default function NewProductPage() {
           <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
             <Card>
               <CardHeader>
-                <CardTitle>Category</CardTitle>
+                <CardTitle>Organization</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="grid gap-6">
                  <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Category</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -240,16 +247,6 @@ export default function NewProductPage() {
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
-                 <CardDescription>
-                  Additional settings for the product.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
                 <FormField
                   control={form.control}
                   name="isFeatured"
@@ -258,7 +255,7 @@ export default function NewProductPage() {
                       <div className="space-y-0.5">
                         <FormLabel>Featured Product</FormLabel>
                         <FormDescription>
-                          Display this product on the homepage.
+                          Display on homepage.
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -271,6 +268,39 @@ export default function NewProductPage() {
                   )}
                 />
               </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Discount & Delivery</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                    <FormField
+                        control={form.control}
+                        name="discountPercentage"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Discount (%)</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="10" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="deliveryInfo"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Delivery Info</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. Free Delivery" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
             </Card>
           </div>
         </div>

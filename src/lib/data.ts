@@ -1,3 +1,4 @@
+
 import type { Product, Category } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -28,6 +29,8 @@ export const products: Product[] = [
         materials: ['Mninga Wood', 'Linen Upholstery'],
         stock: 15,
         isFeatured: true,
+        deliveryInfo: 'Free Delivery',
+        discountPercentage: 10,
         createdAt: new Date('2023-10-01'),
     },
     {
@@ -40,6 +43,7 @@ export const products: Product[] = [
         materials: ['Eucalyptus Frame', 'High-Density Foam', 'Cotton Blend Fabric'],
         stock: 8,
         isFeatured: true,
+        deliveryInfo: 'Delivery fees apply',
         createdAt: new Date('2023-10-05'),
     },
     {
@@ -65,6 +69,8 @@ export const products: Product[] = [
         materials: ['Reclaimed Dhow Wood', 'Steel'],
         stock: 12,
         isFeatured: true,
+        deliveryInfo: 'Free Delivery',
+        discountPercentage: 15,
         createdAt: new Date('2023-09-15'),
     },
     {
@@ -101,6 +107,7 @@ export const products: Product[] = [
         materials: ['Mahogany Wood', 'Leatherette Top'],
         stock: 18,
         isFeatured: true,
+        deliveryInfo: 'Free Delivery',
         createdAt: new Date('2023-11-05'),
     },
     {

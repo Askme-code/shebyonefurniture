@@ -18,10 +18,8 @@ export type Product = {
   materials?: string[];
   stock: number;
   isFeatured: boolean;
-  isOnSale?: {
-    status: boolean;
-    salePrice?: number;
-  };
+  deliveryInfo?: string;
+  discountPercentage?: number;
   createdAt: Date;
 };
 
