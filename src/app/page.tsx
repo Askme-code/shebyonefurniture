@@ -71,6 +71,7 @@ export default function Home() {
             </p>
             <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary">
               <a href="https://wa.me/255657687266" target="_blank" rel="noopener noreferrer">
+                <Image src="/image/whatsapp-logo-3d-render-free-png.png" alt="WhatsApp" width={24} height={24} />
                 Inquire on WhatsApp
               </a>
             </Button>
