@@ -175,8 +175,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
-          <p className="text-card-foreground/60">&copy; {new Date().getFullYear()} Sheby One Furniture. All Rights Reserved.</p>
+        <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm gap-2">
+          <p className="text-card-foreground/60 text-center md:text-left">&copy; {new Date().getFullYear()} Sheby One Furniture. All Rights Reserved.</p>
+           <p className="text-card-foreground/60 text-center md:text-right">
+            Designed by <a href="mailto:kimumilangali@gmail.com" className="hover:text-primary transition-colors">Milangali Kimu</a> (+255 652 810 564)
+          </p>
         </div>
       </div>
       <button
